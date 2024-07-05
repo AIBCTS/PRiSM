@@ -4,7 +4,18 @@
 
 PROJECT_NAME = prism
 PYTHON_VERSION = 3.11
-PYTHON_INTERPRETER = python
+
+# Determine the appropriate Python interpreter
+ifeq ($(OS),Windows_NT)
+    PYTHON_INTERPRETER = python
+else
+    # For Unix-like systems, check if python3 is available, otherwise use python
+    ifeq ($(shell which python3),)
+        PYTHON_INTERPRETER = python
+    else
+        PYTHON_INTERPRETER = python3
+    endif
+endif
 
 #################################################################################
 # COMMANDS                                                                      #
@@ -15,13 +26,13 @@ PYTHON_INTERPRETER = python
 create_environment:
 ifeq ($(OS),Windows_NT)
 	@echo "Creating virtual environment on Windows (this may take a few minutes)..."
-	@python -m venv venv_$(PROJECT_NAME) --clear --copies
+	@$(PYTHON_INTERPRETER) -m venv venv_$(PROJECT_NAME) --clear --copies
 	@echo ">>> New venv created. Activating and installing requirements..."
 	@venv_$(PROJECT_NAME)\Scripts\python -m pip install --upgrade pip setuptools
 	@venv_$(PROJECT_NAME)\Scripts\pip install -r requirements.txt
 else
 	@echo "Creating virtual environment on Unix-like system (this may take a few minutes)..."
-	@python3 -m venv venv_$(PROJECT_NAME) --clear --copies
+	@$(PYTHON_INTERPRETER) -m venv venv_$(PROJECT_NAME) --clear --copies
 	@echo ">>> New venv created. Activating and installing requirements (this may take a few minutes)..."
 	@venv_$(PROJECT_NAME)/bin/python -m pip install --upgrade pip setuptools
 	@venv_$(PROJECT_NAME)/bin/pip install -r requirements.txt
@@ -82,4 +93,4 @@ endef
 export PRINT_HELP_PYSCRIPT
 
 help:
-	@python -c "${PRINT_HELP_PYSCRIPT}" < $(MAKEFILE_LIST)
+	@$(PYTHON_INTERPRETER) -c "$(PRINT_HELP_PYSCRIPT)" < $(MAKEFILE_LIST)
