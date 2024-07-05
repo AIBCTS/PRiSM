@@ -16,7 +16,7 @@ Creating the environment may take a few minutes. To activate the virtual environ
 
 On Windows: `.\venv_prism\Scripts\activate`
 
-On Unix-like system: `.\venv_prism\bin\activate`
+On Unix-like systems: `source .\venv_prism\bin\activate`
 
 When running the Jupyter notebooks, select `venv_prism` as the kernel. See [notebooks/4.01-hpi-unos-modelling-full.ipynb](notebooks/4.01-hpi-unos-modelling-full.ipynb) for an example runthrough of the PRiSM method (_to be replaced with a proper tutorial notebook_). The notebook can be opened directly in VS Code, or in Jupyter directly by running `jupyter notebook \notebooks\4.01-hpi-unos-modelling-full.ipynb`.
 
