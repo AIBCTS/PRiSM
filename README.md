@@ -18,9 +18,9 @@ On Windows: `.\venv_prism\Scripts\activate`
 
 On Unix-like system: `.\venv_prism\bin\activate`
 
-When running the Jupyter notebooks, select `venv_prism` as the kernel. See <\notebooks\4.01-hpi-unos-modelling-full.ipynb> for an example runthrough of the PRiSM method (_to be replaced with a proper tutorial notebook_). The notebook can be opened directly in VS Code, or in Jupyter directly by running `jupyter notebook \notebooks\4.01-hpi-unos-modelling-full.ipynb`.
+When running the Jupyter notebooks, select `venv_prism` as the kernel. See [notebooks/4.01-hpi-unos-modelling-full.ipynb](notebooks/4.01-hpi-unos-modelling-full.ipynb) for an example runthrough of the PRiSM method (_to be replaced with a proper tutorial notebook_). The notebook can be opened directly in VS Code, or in Jupyter directly by running `jupyter notebook \notebooks\4.01-hpi-unos-modelling-full.ipynb`.
 
-Project documentation will eventually be hosted via github pages, but for now it can be viewed locally. See <docs/README.md>.
+Project documentation will eventually be hosted via github pages, but for now it can be viewed locally. See [docs/README.md](docs/README.md).
 
 ## Project Organization
 
