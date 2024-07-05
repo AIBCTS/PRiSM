@@ -1,0 +1,13 @@
+site_name: PRiSM
+site_author: Henry Pigot, Paulo Lisboa, Johan Nilsson
+
+theme:
+  name: "material"
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          selection:
+            docstring_style: numpy

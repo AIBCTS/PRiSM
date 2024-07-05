@@ -1,0 +1,10 @@
+{
+  "export_formats": [
+    "script",
+    "pdf"
+  ],
+  "organize_by": "extension",
+  "clean": {
+    "exclude": []
+  }
+}
