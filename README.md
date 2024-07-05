@@ -12,7 +12,7 @@ Open a terminal and navigate to the project folder (where this `README.md` is). 
 make create_environment
 ```
 
-If you need to specify a specific python interpreter, rather than that which is assigned to `python` or `python3 by default on your system, you can specify it (e.g. for an interpreter located at `/opt/python/3.11.7/bin/python3`):
+If you need to specify a specific python interpreter, rather than that which is assigned to `python` or `python3` by default on your system, you can specify it (e.g. for an interpreter located at `/opt/python/3.11.7/bin/python3`):
 
 ```bash
 CUSTOM_PYTHON=/opt/python/3.11.7/bin/python3 make create_environment
