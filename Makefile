@@ -5,15 +5,22 @@
 PROJECT_NAME = prism
 PYTHON_VERSION = 3.11
 
+# Allow specification of a custom Python interpreter
+# e.g. for DGX2 use CUSTOM_PYTHON=/opt/python/3.11.7/bin/python3 make create_environment
+CUSTOM_PYTHON ?=
+
 # Determine the appropriate Python interpreter
-ifeq ($(OS),Windows_NT)
-    PYTHON_INTERPRETER = python
+ifdef CUSTOM_PYTHON
+    PYTHON_INTERPRETER = $(CUSTOM_PYTHON)
 else
-    # For Unix-like systems, check if python3 is available, otherwise use python
-    ifeq ($(shell which python3),)
+    ifeq ($(OS),Windows_NT)
         PYTHON_INTERPRETER = python
     else
-        PYTHON_INTERPRETER = python3
+        ifeq ($(shell which python3),)
+            PYTHON_INTERPRETER = python
+        else
+            PYTHON_INTERPRETER = python3
+        endif
     endif
 endif
 
@@ -24,18 +31,22 @@ endif
 ## Set up python interpreter environment
 .PHONY: create_environment
 create_environment:
-ifeq ($(OS),Windows_NT)
-	@echo "Creating virtual environment on Windows (this may take a few minutes)..."
+	@echo "Checking Python version..."
+	@$(PYTHON_INTERPRETER) -c "import sys; \
+		current_version = '{}.{}'.format(sys.version_info.major, sys.version_info.minor); \
+		print(f'Python {current_version} detected.'); \
+		if current_version != '$(PYTHON_VERSION)': \
+			print('\033[93mWarning: Python $(PYTHON_VERSION) is recommended for this project.\033[0m')"
+	@echo "Creating virtual environment using Python interpreter: $(PYTHON_INTERPRETER)"
 	@$(PYTHON_INTERPRETER) -m venv venv_$(PROJECT_NAME) --clear --copies
 	@echo ">>> New venv created. Activating and installing requirements..."
+ifeq ($(OS),Windows_NT)
 	@venv_$(PROJECT_NAME)\Scripts\python -m pip install --upgrade pip setuptools
 	@venv_$(PROJECT_NAME)\Scripts\pip install -r requirements.txt
 else
-	@echo "Creating virtual environment on Unix-like system (this may take a few minutes)..."
-	@$(PYTHON_INTERPRETER) -m venv venv_$(PROJECT_NAME) --clear --copies
-	@echo ">>> New venv created. Activating and installing requirements (this may take a few minutes)..."
-	@venv_$(PROJECT_NAME)/bin/python -m pip install --upgrade pip setuptools
-	@venv_$(PROJECT_NAME)/bin/pip install -r requirements.txt
+	@. venv_$(PROJECT_NAME)/bin/activate && \
+		pip install --upgrade pip setuptools && \
+		pip install -r requirements.txt
 endif
 	@echo ">>> Environment setup complete. Activate with:"
 ifeq ($(OS),Windows_NT)
