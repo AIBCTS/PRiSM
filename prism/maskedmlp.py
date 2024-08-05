@@ -256,3 +256,68 @@ def get_model_weights_with_biases(model: nn.Module):
     W2_with_bias = torch.cat((W2, b2), dim=1)
 
     return [W1_with_bias.t(), W2_with_bias.t()]
+
+def train_mlp_batched(x_tr, y_tr, x_ts, y_ts, n_hidden, lr=0.001, weight_decay=0.00001, tolerance=0.001, patience=10, max_iter=10000, batch_size=32, device='cpu', seed=257):
+    torch.manual_seed(seed)
+    device = torch.device(device)
+
+    # Create TensorDatasets and DataLoaders
+    train_dataset = TensorDataset(torch.tensor(x_tr.values, dtype=torch.float32), torch.tensor(y_tr.values, dtype=torch.float32).unsqueeze(1))
+    test_dataset = TensorDataset(torch.tensor(x_ts.values, dtype=torch.float32), torch.tensor(y_ts.values, dtype=torch.float32).unsqueeze(1))
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
+
+    # Define the MLP model using MaskedMLP
+    model = MaskedMLP(input_dim=x_tr.shape[1], hidden_units=n_hidden, output_dim=1).to(device)
+
+    criterion = nn.BCELoss()
+    optimizer = optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
+
+    # Variables for early stopping
+    min_loss = float('inf')
+    patience_counter = 0
+    best_epoch = 0
+
+    # Training loop
+    for epoch in range(max_iter):
+        model.train()
+        train_loss = 0
+        for inputs, targets in train_loader:
+            inputs, targets = inputs.to(device), targets.to(device)
+            optimizer.zero_grad()
+            outputs = model(inputs)
+            loss = criterion(outputs, targets)
+            loss.backward()
+            optimizer.step()
+            train_loss += loss.item()
+
+        # Validation step
+        model.eval()
+        val_loss = 0
+        with torch.no_grad():
+            for inputs, targets in test_loader:
+                inputs, targets = inputs.to(device), targets.to(device)
+                outputs = model(inputs)
+                val_loss += criterion(outputs, targets).item()
+
+        val_loss /= len(test_loader)
+        train_loss /= len(train_loader)
+
+        # Early stopping conditions
+        if val_loss < min_loss - tolerance:
+            min_loss = val_loss
+            best_model_wts = model.state_dict()  # Save the best model
+            best_epoch = epoch
+            patience_counter = 0
+        else:
+            patience_counter += 1
+
+        if patience_counter >= patience:
+            print(f"Stopping early at epoch {best_epoch}")
+            model.load_state_dict(best_model_wts)
+            break
+
+        if epoch % 1 == 0:
+            print(f"Epoch {epoch}: Train loss {train_loss:.4f}, Val loss {val_loss:.4f}")
+
+    return model

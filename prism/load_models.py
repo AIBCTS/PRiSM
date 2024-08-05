@@ -43,16 +43,11 @@ def load_mlp(filename, models_dir):
     # Load the corrected state dict
     model.load_state_dict(new_state_dict)
     
-    # Update params with the derived structure
-    params['input_dim'] = input_dim
-    params['hidden_units'] = hidden_units
-    params['output_dim'] = output_dim
-    
     return model, params, metrics
 
 def load_prn(filename, models_dir):
     """
-    Load a Partial Response Network model from a file.
+    Load a Partial Response Network model from a file, deriving the structure from the state dict.
     
     Args:
     filename (str): Name of the file to load the model from (without extension)
@@ -68,16 +63,19 @@ def load_prn(filename, models_dir):
     params = info['params']
     metrics = info['metrics']
     
-    # Reconstruct the model
-    input_dim = params['n_hidden']
-    hidden_units = params['n_hidden']
-    mask = params['mask']
-    subnet_nodes = params['subnet_nodes']
-    
-    model = MaskedMLP(input_dim, hidden_units, 1, mask)
-    
     # Load the model state
-    model.load_state_dict(torch.load(models_dir.joinpath(f"{filename}.pth")))
+    state_dict = torch.load(models_dir.joinpath(f"{filename}.pth"))
+    
+    # Derive model structure from state dict
+    input_dim = state_dict['fc1.weight'].shape[1]
+    hidden_units = state_dict['fc1.weight'].shape[0]
+    output_dim = state_dict['fc2.weight'].shape[0]
+    
+    # Reconstruct the model
+    model = MaskedMLP(input_dim, hidden_units, output_dim, params['mask'])
+    
+    # Load the state dict
+    model.load_state_dict(state_dict)
     
     return model, params, metrics
 
