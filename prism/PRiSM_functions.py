@@ -802,6 +802,9 @@ def partialResponses(x_train: pd.DataFrame, x_test: pd.DataFrame, model: Any, re
     else:
       F_covariates_train = np.concatenate((univariate_y[0:x_train.shape[0],:],bivariate_y[0:x_train.shape[0],:]),axis=1)
       F_covariates_test = np.concatenate((univariate_y[x_train.shape[0]:all_x.shape[0],:],bivariate_y[x_train.shape[0]:all_x.shape[0],:]),axis=1)
+    print(f"logit_y0: {logit_y0}")
+    print(f"First few univariate responses: {univariate_y[:5, :5]}")
+    print(f"First few bivariate responses: {bivariate_y[:5, :5]}")
 
   if method.lower() == "lebesgue": # -------------------------------------------------------------- EDIT CODE: DO NOT CONCATENATE
 
@@ -928,6 +931,11 @@ def partialResponses(x_train: pd.DataFrame, x_test: pd.DataFrame, model: Any, re
       F_covariates_train = np.concatenate((univariate_y_train,bivariate_y_train),axis=1)
       F_covariates_test = np.concatenate((univariate_y_test,bivariate_y_test),axis=1)
 
+    print(f"logit_y0: {logit_y0}")
+    print(f"First few univariate responses (train): {univariate_y_train[:5, :5]}")
+    print(f"First few bivariate responses (train): {bivariate_y_train[:5, :5]}")
+    print(f"First few univariate responses (test): {univariate_y_test[:5, :5]}")
+    print(f"First few bivariate responses (test): {bivariate_y_test[:5, :5]}")
 
   return F_covariates_train, F_covariates_test, bivariate_inputs
 
