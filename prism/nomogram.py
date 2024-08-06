@@ -134,11 +134,13 @@ class NomogramGenerator:
 
 def nomogram(betas: torch.Tensor, userLambda: int, x: torch.Tensor, x0_median: torch.Tensor, 
              x0_std: torch.Tensor, model: Any, n_steps: int = 15, sd_scale: float = 2, 
-             method: str = "dirac", device: str = "cpu", categorical_threshold: int = 15) -> None:
+             method: str = "dirac", device: str = "cpu", categorical_threshold: int = 15,
+             subtract_univariate: bool = False) -> None:
     
     # Calculate subset of partial responses
     univariate_responses, bivariate_responses, bivariate_inputs, x_univariate, x_bivariate = partial_responses_subset(
-        x, model, method=method, device=device, n_steps=n_steps, categorical_threshold=categorical_threshold
+        x, model, method=method, device=device, n_steps=n_steps, categorical_threshold=categorical_threshold,
+        subtract_univariate=subtract_univariate
     )
 
     # Generate plots
