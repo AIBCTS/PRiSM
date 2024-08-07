@@ -32,11 +32,8 @@ endif
 .PHONY: create_environment
 create_environment:
 	@echo "Checking Python version..."
-	@$(PYTHON_INTERPRETER) -c "import sys; \
-		current_version = '{}.{}'.format(sys.version_info.major, sys.version_info.minor); \
-		print(f'Python {current_version} detected.'); \
-		if current_version != '$(PYTHON_VERSION)': \
-			print('\033[93mWarning: Python $(PYTHON_VERSION) is recommended for this project.\033[0m')"
+	@$(PYTHON_INTERPRETER) -c "import sys; print('Python {}.{} detected.'.format(sys.version_info.major, sys.version_info.minor))"
+	@$(PYTHON_INTERPRETER) -c "import sys; current_version = '{}.{}'.format(sys.version_info.major, sys.version_info.minor); recommended = '$(PYTHON_VERSION)'; print('Warning: Python {} is recommended for this project.'.format(recommended) if current_version != recommended else '')"
 	@echo "Creating virtual environment using Python interpreter: $(PYTHON_INTERPRETER)"
 	@$(PYTHON_INTERPRETER) -m venv venv_$(PROJECT_NAME) --clear --copies
 	@echo ">>> New venv created. Activating and installing requirements..."
