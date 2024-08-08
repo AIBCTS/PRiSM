@@ -6,7 +6,9 @@ PRiSM (Partial Responses in Structured Models) is a method designed to transform
 
 The PRiSM tool runs using `python`. To help with setup, we use `make`. Ensure you have `make` installed (exists by default on MacOS and Linux). For help with setting up make on Windows, see [this link](https://cookiecutter-data-science.drivendata.org/using-the-template/#installing-make-on-windows); we recommend using `chocolatey` or `scoop` to install `make`.
 
-For a full setup guide using Jupyter notebooks in VSCode, see
+See the [extra setup instructions](#extra-setup-instructions) to get started without `make`, using a GPU (CUDA), or using a specific python interpreter on your machine.
+
+Although you can run Jupyter notebooks directly in your browser with the python Jupyter package, we use VSCode. For a full setup guide using Jupyter notebooks in VSCode, see
 
 - [Windows Setup](SETUP_WINDOWS.md)
 - [Linux Setup](SETUP_LINUX.md)
@@ -19,7 +21,22 @@ Regardless of your operating system, the general workflow will be:
 3. Set up the project's virtual environment
 4. Configure VS Code for use with the project
 
-If you need to specify a specific python interpreter, rather than that which is assigned to `python` or `python3` by default on your system, you can specify it when creating the `venv` with `make` (e.g. for an interpreter located at `/opt/python/3.11.7/bin/python3`):
+### Extra setup instructions
+
+**If you have trouble with `make`**, you can 
+
+1. Install Python 3.11
+2. Create the virtual environment in the project directory using `python -m venv venv_prism --clear --copies` and activate it (e.g. `.\venv_prism\Scripts\activate` on Windows)
+3. Run `pip install -r requirements.txt` to install all packages
+
+**If you want to use CUDA to run the project with your dedicated (NVIDIA) graphics card** on Windows,
+
+1. Create the virtual environment in the project directory using `python -m venv venv_prism --clear --copies` and activate it (e.g. `.\venv_prism\Scripts\activate` on Windows)
+2. Ensure pip is up to date `python -m pip install --upgrade pip`
+3. Install pytorch version 2.3.1 with CUDA compatability `pip install torch==2.3.1 torchvision==0.18.1 torchaudio==2.3.1 --index-url https://download.pytorch.org/whl/cu121` You may need to choose a different CUDA version if your hardware is not CUDA 12.1 or later (e.g. CUDA 11.x), see [this link](pip install torch==2.3.1 torchvision==0.18.1 torchaudio==2.3.1 --index-url https://download.pytorch.org/whl/cu121) for options.
+4. Run `pip install -r requirements.txt` to install the remaining requirements. Since torch 2.3.1 is already installed, it should not overwrite the previously installed CUDA enabled package.
+
+**If you need to specify a specific python interpreter**, rather than that which is assigned to `python` or `python3` by default on your system, you can specify it when creating the `venv` with `make` (e.g. for an interpreter located at `/opt/python/3.11.7/bin/python3`):
 
 ```bash
 make create_environment CUSTOM_PYTHON=/opt/python/3.11.7/bin/python3
@@ -67,6 +84,6 @@ Documentation for the PRiSM codebase will eventually be hosted via github pages,
 
 For notebook numbering guidance, see the [conventions here](https://cookiecutter-data-science.drivendata.org/using-the-template/#open-a-notebook).
 
-To export notebooks to pdf and .py, use `nbautoexport export notebooks` from the root project directory.
+To export notebooks to pdf and .py, use `nbautoexport export notebooks` from the root project directory, while the python `venv` is activated. You'll need to have [TeX installed](https://nbconvert.readthedocs.io/en/latest/install.html#installing-tex).
 
 <p><small>Structure based on the <a target="_blank" href="https://drivendata.github.io/cookiecutter-data-science/">cookiecutter data science project template</a>.</small></p>
