@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 import matplotlib.colors as mcolors
 from IPython.display import clear_output
+from typing import Tuple, List, Union
 
 
 def live_plot(all_train_losses, all_val_losses, lambdas, figsize=(15, 10), title=''):
@@ -80,19 +81,19 @@ class LogisticRegressionModel(nn.Module):
         return torch.sigmoid(self.linear(x))
 
 
-def run_glm_pytorch(i, lambdas, F_covariates_train, y_train, F_covariates_test, y_test, num_epochs=100000, lr=0.001, tolerance=1e-4):
+def run_glm_pytorch(i: int, lambdas: np.ndarray, partial_responses_train: np.ndarray, y_train: Union[np.ndarray, pd.Series], partial_responses_test: np.ndarray, y_test: Union[np.ndarray, pd.Series], num_epochs: int = 100000, lr: float = 0.001, tolerance: float = 1e-4) -> Tuple[int, np.ndarray, np.ndarray, np.ndarray, float, float, float, float, List[float], List[float]]:
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = LogisticRegressionModel(F_covariates_train.shape[1]).to(device)
+    model = LogisticRegressionModel(partial_responses_train.shape[1]).to(device)
     criterion = nn.BCELoss()
     optimizer = optim.Adam(model.parameters(), lr=lr, eps=1e-10)
 
-    F_covariates_train = torch.tensor(
-        F_covariates_train, dtype=torch.float32).to(device)
-    y_train = torch.tensor(y_train.to_numpy().reshape(-1, 1),
-                           dtype=torch.float32).to(device)
-    F_covariates_test = torch.tensor(
-        F_covariates_test, dtype=torch.float32).to(device)
-    y_test_np = y_test.to_numpy().reshape(-1, 1)
+    partial_responses_train = torch.tensor(
+        partial_responses_train, dtype=torch.float32).to(device)
+    y_train = torch.tensor(y_train.values if isinstance(y_train, pd.Series) else y_train, dtype=torch.float32).reshape(-1, 1).to(device)
+    partial_responses_test = torch.tensor(
+        partial_responses_test, dtype=torch.float32).to(device)
+    y_test_np = y_test.values if isinstance(y_test, pd.Series) else y_test
+    y_test_np = y_test_np.reshape(-1, 1)
 
     lambda_l1 = lambdas[i]
     initial_loss = None
@@ -106,7 +107,7 @@ def run_glm_pytorch(i, lambdas, F_covariates_train, y_train, F_covariates_test, 
     for epoch in range(num_epochs):
         model.train()
         optimizer.zero_grad()
-        outputs = model(F_covariates_train)
+        outputs = model(partial_responses_train)
         l1_penalty = lambda_l1 * \
             torch.linalg.vector_norm(model.linear.weight, ord=1)
         loss = criterion(outputs, y_train) + l1_penalty
@@ -115,7 +116,7 @@ def run_glm_pytorch(i, lambdas, F_covariates_train, y_train, F_covariates_test, 
 
         model.eval()
         with torch.no_grad():
-            val_outputs = model(F_covariates_test)
+            val_outputs = model(partial_responses_test)
             val_loss = criterion(val_outputs, torch.tensor(
                 y_test_np, dtype=torch.float32).to(device))
 
@@ -146,8 +147,8 @@ def run_glm_pytorch(i, lambdas, F_covariates_train, y_train, F_covariates_test, 
     # Final evaluation with the best model
     model.eval()
     with torch.no_grad():
-        y_pred_train = model(F_covariates_train).cpu().numpy().ravel()
-        y_pred_test = model(F_covariates_test).cpu().numpy().ravel()
+        y_pred_train = model(partial_responses_train).cpu().numpy().ravel()
+        y_pred_test = model(partial_responses_test).cpu().numpy().ravel()
         train_auc = roc_auc_score(y_train.cpu(), y_pred_train)
         test_auc = roc_auc_score(y_test_np, y_pred_test)
 
@@ -166,25 +167,27 @@ def run_glm_pytorch(i, lambdas, F_covariates_train, y_train, F_covariates_test, 
     return i, beta, y_pred_train, y_pred_test, train_dev, test_dev, train_auc, test_auc, train_losses, val_losses
 
 
-def run_glm_sklearn(i, lambdas, F_covariates_train, y_train, F_covariates_test, y_test, lr=0.001):
+def run_glm_sklearn(i: int, lambdas: np.ndarray, partial_responses_train: np.ndarray, y_train: Union[np.ndarray, pd.Series], partial_responses_test: np.ndarray, y_test: Union[np.ndarray, pd.Series], lr: float = 0.001) -> Tuple[int, np.ndarray, np.ndarray, np.ndarray, float, float, float, float, List[float], List[float]]:
     """Run logistic regresssion with L1 regularization using sklearn. Learning rate `lr` not used."""
     C_values = 1/lambdas
 
     lr = LogisticRegression(
         C=C_values[i], penalty='l1', solver='saga', max_iter=10000)
-    lr.fit(F_covariates_train, y_train.to_numpy().ravel())
+    lr.fit(partial_responses_train, y_train.values.ravel() if isinstance(y_train, pd.Series) else y_train.ravel())
 
     beta = lr.coef_
-    y_pred_train = lr.predict_proba(F_covariates_train)[:, 1]
-    y_pred_test = lr.predict_proba(F_covariates_test)[:, 1]
+    y_pred_train = lr.predict_proba(partial_responses_train)[:, 1]
+    y_pred_test = lr.predict_proba(partial_responses_test)[:, 1]
     train_auc = roc_auc_score(y_train, y_pred_train)
     test_auc = roc_auc_score(y_test, y_pred_test)
 
     # Deviance approximated as -2 * log-likelihood
-    train_dev = -2 * np.sum(y_train * np.log(y_pred_train) +
-                            (1 - y_train) * np.log(1 - y_pred_train))
-    test_dev = -2 * np.sum(y_test * np.log(y_pred_test) +
-                           (1 - y_test) * np.log(1 - y_pred_test))
+    y_train_np = y_train.values if isinstance(y_train, pd.Series) else y_train
+    y_test_np = y_test.values if isinstance(y_test, pd.Series) else y_test
+    train_dev = -2 * np.sum(y_train_np * np.log(y_pred_train) +
+                            (1 - y_train_np) * np.log(1 - y_pred_train))
+    test_dev = -2 * np.sum(y_test_np * np.log(y_pred_test) +
+                           (1 - y_test_np) * np.log(1 - y_pred_test))
 
     # Calculate BCELoss using sklearn's log_loss function
     train_bce_loss = log_loss(y_train, y_pred_train)
@@ -193,14 +196,14 @@ def run_glm_sklearn(i, lambdas, F_covariates_train, y_train, F_covariates_test, 
     return i, beta, y_pred_train, y_pred_test, train_dev, test_dev, train_auc, test_auc, [train_bce_loss], [test_bce_loss]
 
 
-def prLASSO(F_covariates_train, F_covariates_test, y_train, y_test, num_lambdas=25, verbose=True, log_min_lambda=-3, log_max_lambda=2, lasso_function=run_glm_sklearn, lr=0.001):
-    num_features = F_covariates_train.shape[1]
+def prLASSO(partial_responses_train: np.ndarray, partial_responses_test: np.ndarray, y_train: Union[np.ndarray, pd.Series], y_test: Union[np.ndarray, pd.Series], num_lambdas: int = 25, verbose: bool = True, log_min_lambda: float = -3, log_max_lambda: float = 2, lasso_function: callable = run_glm_sklearn, lr: float = 0.001) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    num_features = partial_responses_train.shape[1]
     # Solves quadratic equation for n*(n+1)/2 = num_features
     n_univ = int((np.sqrt(1 + 8 * num_features) - 1) / 2)
     n_biv = num_features - n_univ
     lambdas = np.logspace(log_max_lambda, log_min_lambda, num=num_lambdas)
-    betas = np.zeros((F_covariates_train.shape[1], len(lambdas)))
-    glmPred = np.zeros((F_covariates_test.shape[0], len(lambdas)))
+    betas = np.zeros((partial_responses_train.shape[1], len(lambdas)))
+    glmPred = np.zeros((partial_responses_test.shape[0], len(lambdas)))
     trainAUC = np.zeros(len(lambdas))
     trainDev = np.zeros(len(lambdas))
     testAUC = np.zeros(len(lambdas))
@@ -211,8 +214,8 @@ def prLASSO(F_covariates_train, F_covariates_test, y_train, y_test, num_lambdas=
     all_test_losses = []
 
     with ThreadPoolExecutor() as executor:
-        futures = [executor.submit(lasso_function, i, lambdas, F_covariates_train,
-                                   y_train, F_covariates_test, y_test, lr=lr) for i in range(len(lambdas))]
+        futures = [executor.submit(lasso_function, i, lambdas, partial_responses_train,
+                                   y_train, partial_responses_test, y_test, lr=lr) for i in range(len(lambdas))]
         for future in as_completed(futures):
             i, beta, y_pred_train, y_pred_test, train_dev, test_dev, train_auc, test_auc, train_losses, test_losses = future.result()
             betas[:, i] = beta.flatten()  # Ensure beta is a 1D array
