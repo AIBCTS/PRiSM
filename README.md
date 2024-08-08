@@ -4,29 +4,30 @@ PRiSM (Partial Responses in Structured Models) is a method designed to transform
 
 ## Getting Started
 
-The PRiSM tool runs using `python`. To help with setup, we use `make`. It is assumed you have the following installed: `python 3.11`, `pip`, and [`make`](https://cookiecutter-data-science.drivendata.org/using-the-template/#make-as-a-task-runner).
+The PRiSM tool runs using `python`. To help with setup, we use `make`. Ensure you have `make` installed (exists by default on MacOS and Linux). For help with setting up make on Windows, see [this link](https://cookiecutter-data-science.drivendata.org/using-the-template/#installing-make-on-windows); we recommend using `chocolatey` or `scoop` to install `make`.
 
-Open a terminal and navigate to the project folder (where this `README.md` is). Start by creating the python virtual environment `venv_prism` by running:
+For a full setup guide using Jupyter notebooks in VSCode, see
+
+- [Windows Setup](SETUP_WINDOWS.md)
+- [Linux Setup](SETUP_LINUX.md)
+- [macOS Setup](SETUP_MACOS.md)
+
+Regardless of your operating system, the general workflow will be:
+
+1. Install Python 3.11
+2. Install Visual Studio Code
+3. Set up the project's virtual environment
+4. Configure VS Code for use with the project
+
+If you need to specify a specific python interpreter, rather than that which is assigned to `python` or `python3` by default on your system, you can specify it when creating the `venv` with `make` (e.g. for an interpreter located at `/opt/python/3.11.7/bin/python3`):
 
 ```bash
-make create_environment
+make create_environment CUSTOM_PYTHON=/opt/python/3.11.7/bin/python3
 ```
 
-If you need to specify a specific python interpreter, rather than that which is assigned to `python` or `python3` by default on your system, you can specify it (e.g. for an interpreter located at `/opt/python/3.11.7/bin/python3`):
+Once Jupyter is setup with the virtual envrionment in VScode, see [notebooks/4.01-hpi-unos-modelling-full.ipynb](notebooks/4.01-hpi-unos-modelling-full.ipynb) for an example runthrough of the PRiSM method (_to be replaced with a proper tutorial notebook_). The notebook can be opened directly in VS Code, or in Jupyter directly by running `jupyter notebook \notebooks\4.01-hpi-unos-modelling-full.ipynb`.
 
-```bash
-CUSTOM_PYTHON=/opt/python/3.11.7/bin/python3 make create_environment
-```
-
-Creating the environment may take a few minutes. To activate the virtual environment run:
-
-On Windows: `.\venv_prism\Scripts\activate`
-
-On Unix-like systems: `source .\venv_prism\bin\activate`
-
-When running the Jupyter notebooks, select `venv_prism` as the kernel. See [notebooks/4.01-hpi-unos-modelling-full.ipynb](notebooks/4.01-hpi-unos-modelling-full.ipynb) for an example runthrough of the PRiSM method (_to be replaced with a proper tutorial notebook_). The notebook can be opened directly in VS Code, or in Jupyter directly by running `jupyter notebook \notebooks\4.01-hpi-unos-modelling-full.ipynb`.
-
-Project documentation will eventually be hosted via github pages, but for now it can be viewed locally. See [docs/README.md](docs/README.md).
+Documentation for the PRiSM codebase will eventually be hosted via github pages, but for now it can be viewed locally. See [docs/README.md](docs/README.md).
 
 ## Project Organization
 
