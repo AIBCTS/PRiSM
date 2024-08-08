@@ -1,0 +1,21 @@
+Average time without torch.no_grad(): 5.874930 seconds
+Average time with torch.no_grad(): 6.171468 seconds
+Difference: 0.296538 seconds
+Relative change: 5.05%
+
+Individual trial results:
+Trial 1:
+  Without torch.no_grad(): 6.246523 seconds
+  With torch.no_grad(): 5.552146 seconds
+Trial 2:
+  Without torch.no_grad(): 5.130095 seconds
+  With torch.no_grad(): 4.337528 seconds
+Trial 3:
+  Without torch.no_grad(): 4.588291 seconds
+  With torch.no_grad(): 8.560831 seconds
+Trial 4:
+  Without torch.no_grad(): 7.897964 seconds
+  With torch.no_grad(): 6.117833 seconds
+Trial 5:
+  Without torch.no_grad(): 5.511775 seconds
+  With torch.no_grad(): 6.289001 seconds

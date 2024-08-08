@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import torch
 import pickle
-from prism.PRiSM_functions import partialResponses
+from prism.partial_responses_old import partialResponses
 from prism.config import MODELS_DIR
 
 def save_partial_responses(x_train, x_test, model, method="dirac", device="cpu", filename=MODELS_DIR.joinpath("partial_responses_data.pkl")):

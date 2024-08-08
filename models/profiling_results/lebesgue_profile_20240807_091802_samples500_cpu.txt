@@ -1,0 +1,116 @@
+         4455271 function calls (4026271 primitive calls) in 413.158 seconds
+
+   Ordered by: cumulative time
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+        1    0.000    0.000  413.158  413.158 c:\Users\Henry Pigot\Documents\MEGAsync\2024 post doc\explainable survival prediction model\prism_github\venv_prism\Lib\site-packages\memory_profiler.py:1185(wrapper)
+        1    0.000    0.000  413.155  413.155 c:\Users\Henry Pigot\Documents\MEGAsync\2024 post doc\explainable survival prediction model\prism_github\venv_prism\Lib\site-packages\memory_profiler.py:759(f)
+        1    0.000    0.000  413.155  413.155 C:\Users\Henry Pigot\AppData\Local\Temp\ipykernel_93128\385629262.py:1(_calculate_lebesgue_profiled)
+        1   34.824   34.824  413.155  413.155 C:\Users\Henry Pigot\Documents\MEGAsync\2024 post doc\explainable survival prediction model\prism_github\prism\partial_responses.py:100(_calculate_lebesgue)
+    33000    7.796    0.000  361.166    0.011 C:\Users\Henry Pigot\Documents\MEGAsync\2024 post doc\explainable survival prediction model\prism_github\prism\partial_responses.py:32(predict)
+    33000   11.607    0.000  328.895    0.010 C:\Users\Henry Pigot\Documents\MEGAsync\2024 post doc\explainable survival prediction model\prism_github\prism\maskedmlp.py:42(predict)
+132000/33000   10.038    0.000  202.615    0.006 c:\Users\Henry Pigot\Documents\MEGAsync\2024 post doc\explainable survival prediction model\prism_github\venv_prism\Lib\site-packages\torch\nn\modules\module.py:1528(_wrapped_call_impl)
+132000/33000   27.733    0.000  199.985    0.006 c:\Users\Henry Pigot\Documents\MEGAsync\2024 post doc\explainable survival prediction model\prism_github\venv_prism\Lib\site-packages\torch\nn\modules\module.py:1534(_call_impl)
+    33000   12.247    0.000  192.292    0.006 C:\Users\Henry Pigot\Documents\MEGAsync\2024 post doc\explainable survival prediction model\prism_github\prism\maskedmlp.py:36(forward)
+    33000    1.618    0.000  100.023    0.003 c:\Users\Henry Pigot\Documents\MEGAsync\2024 post doc\explainable survival prediction model\prism_github\venv_prism\Lib\site-packages\torch\nn\modules\activation.py:356(forward)
+    33000   98.405    0.003   98.405    0.003 {built-in method torch.tanh}
+    33000    1.862    0.000   97.852    0.003 c:\Users\Henry Pigot\Documents\MEGAsync\2024 post doc\explainable survival prediction model\prism_github\venv_prism\Lib\site-packages\torch\nn\modules\module.py:2433(eval)
+132000/33000   24.153    0.000   95.990    0.003 c:\Users\Henry Pigot\Documents\MEGAsync\2024 post doc\explainable survival prediction model\prism_github\venv_prism\Lib\site-packages\torch\nn\modules\module.py:2411(train)
+   132000   26.710    0.000   41.549    0.000 c:\Users\Henry Pigot\Documents\MEGAsync\2024 post doc\explainable survival prediction model\prism_github\venv_prism\Lib\site-packages\torch\nn\modules\module.py:1711(__setattr__)
+    66000    9.124    0.000   33.893    0.001 c:\Users\Henry Pigot\Documents\MEGAsync\2024 post doc\explainable survival prediction model\prism_github\venv_prism\Lib\site-packages\torch\nn\modules\linear.py:115(forward)
+   231000   13.263    0.000   30.091    0.000 c:\Users\Henry Pigot\Documents\MEGAsync\2024 post doc\explainable survival prediction model\prism_github\venv_prism\Lib\site-packages\torch\nn\modules\module.py:2313(children)
+   264000   28.879    0.000   28.879    0.000 c:\Users\Henry Pigot\Documents\MEGAsync\2024 post doc\explainable survival prediction model\prism_github\venv_prism\Lib\site-packages\torch\nn\modules\module.py:1696(__getattr__)
+   231000   16.105    0.000   16.829    0.000 c:\Users\Henry Pigot\Documents\MEGAsync\2024 post doc\explainable survival prediction model\prism_github\venv_prism\Lib\site-packages\torch\nn\modules\module.py:2322(named_children)
+    66000   16.120    0.000   16.120    0.000 {built-in method torch._C._nn.linear}
+594005/462005    5.103    0.000   14.581    0.000 {built-in method builtins.isinstance}
+   132000    9.249    0.000   10.417    0.000 c:\Users\Henry Pigot\Documents\MEGAsync\2024 post doc\explainable survival prediction model\prism_github\venv_prism\Lib\site-packages\torch\nn\parameter.py:8(__instancecheck__)
+    66001    4.923    0.000    9.550    0.000 c:\Users\Henry Pigot\Documents\MEGAsync\2024 post doc\explainable survival prediction model\prism_github\venv_prism\Lib\site-packages\torch\autograd\grad_mode.py:79(__enter__)
+    33000    2.598    0.000    9.052    0.000 c:\Users\Henry Pigot\Documents\MEGAsync\2024 post doc\explainable survival prediction model\prism_github\venv_prism\Lib\site-packages\torch\_tensor.py:34(wrapped)
+   132002    7.600    0.000    8.776    0.000 c:\Users\Henry Pigot\Documents\MEGAsync\2024 post doc\explainable survival prediction model\prism_github\venv_prism\Lib\site-packages\torch\autograd\grad_mode.py:183(__init__)
+    33000    2.374    0.000    8.461    0.000 {built-in method builtins.hasattr}
+    66001    3.900    0.000    8.292    0.000 c:\Users\Henry Pigot\Documents\MEGAsync\2024 post doc\explainable survival prediction model\prism_github\venv_prism\Lib\site-packages\torch\autograd\grad_mode.py:83(__exit__)
+    66001    6.134    0.000    7.749    0.000 c:\Users\Henry Pigot\Documents\MEGAsync\2024 post doc\explainable survival prediction model\prism_github\venv_prism\Lib\site-packages\torch\autograd\grad_mode.py:74(__init__)
+    33000    1.264    0.000    6.360    0.000 c:\Users\Henry Pigot\Documents\MEGAsync\2024 post doc\explainable survival prediction model\prism_github\venv_prism\Lib\site-packages\torch\_tensor.py:964(__rsub__)
+    33000    5.096    0.000    5.096    0.000 {built-in method torch.rsub}
+    33000    4.403    0.000    4.403    0.000 {method 'mean' of 'torch._C.TensorBase' objects}
+    66001    3.280    0.000    3.836    0.000 c:\Users\Henry Pigot\Documents\MEGAsync\2024 post doc\explainable survival prediction model\prism_github\venv_prism\Lib\site-packages\torch\utils\_contextlib.py:149(__new__)
+    33000    2.747    0.000    2.747    0.000 {built-in method torch.sigmoid}
+    33000    1.956    0.000    1.956    0.000 {method 'clone' of 'torch._C.TensorBase' objects}
+    66001    1.813    0.000    1.813    0.000 {method 'to' of 'torch._C.TensorBase' objects}
+   132000    1.791    0.000    1.791    0.000 {built-in method torch._C._get_tracing_state}
+    33000    1.746    0.000    1.746    0.000 {built-in method torch.log}
+    66001    1.615    0.000    1.615    0.000 c:\Users\Henry Pigot\Documents\MEGAsync\2024 post doc\explainable survival prediction model\prism_github\venv_prism\Lib\site-packages\torch\_jit_internal.py:1120(is_scripting)
+    33000    1.484    0.000    1.484    0.000 {method 'squeeze' of 'torch._C.TensorBase' objects}
+   132002    0.913    0.000    0.913    0.000 {built-in method torch._C._set_grad_enabled}
+   132000    0.591    0.000    0.591    0.000 {method 'items' of 'collections.OrderedDict' objects}
+   396004    0.565    0.000    0.565    0.000 {method 'get' of 'dict' objects}
+    66001    0.556    0.000    0.556    0.000 {built-in method __new__ of type object at 0x00007FF804FA8F90}
+   198003    0.506    0.000    0.506    0.000 {built-in method torch.is_grad_enabled}
+   132000    0.229    0.000    0.229    0.000 {function _ParameterMeta.__instancecheck__ at 0x00000246EEFA0720}
+    99000    0.133    0.000    0.133    0.000 {method 'add' of 'set' objects}
+    33000    0.095    0.000    0.095    0.000 {built-in method torch._C._has_torch_function}
+       56    0.005    0.000    0.005    0.000 {built-in method torch.zeros}
+        1    0.000    0.000    0.002    0.002 c:\Users\Henry Pigot\Documents\MEGAsync\2024 post doc\explainable survival prediction model\prism_github\venv_prism\Lib\site-packages\memory_profiler.py:713(__call__)
+        1    0.000    0.000    0.002    0.002 c:\Users\Henry Pigot\Documents\MEGAsync\2024 post doc\explainable survival prediction model\prism_github\venv_prism\Lib\site-packages\memory_profiler.py:728(add_function)
+        1    0.000    0.000    0.002    0.002 c:\Users\Henry Pigot\Documents\MEGAsync\2024 post doc\explainable survival prediction model\prism_github\venv_prism\Lib\site-packages\memory_profiler.py:645(add)
+        1    0.000    0.000    0.001    0.001 {built-in method builtins.print}
+        2    0.000    0.000    0.001    0.001 c:\Users\Henry Pigot\Documents\MEGAsync\2024 post doc\explainable survival prediction model\prism_github\venv_prism\Lib\site-packages\ipykernel\iostream.py:655(write)
+        1    0.001    0.001    0.001    0.001 {built-in method torch.stack}
+        1    0.000    0.000    0.001    0.001 <frozen genericpath>:16(exists)
+        1    0.001    0.001    0.001    0.001 {built-in method nt.stat}
+        2    0.000    0.000    0.000    0.000 c:\Users\Henry Pigot\Documents\MEGAsync\2024 post doc\explainable survival prediction model\prism_github\venv_prism\Lib\site-packages\ipykernel\iostream.py:577(_schedule_flush)
+        1    0.000    0.000    0.000    0.000 c:\Users\Henry Pigot\Documents\MEGAsync\2024 post doc\explainable survival prediction model\prism_github\venv_prism\Lib\site-packages\memory_profiler.py:702(__init__)
+        1    0.000    0.000    0.000    0.000 c:\Users\Henry Pigot\Documents\MEGAsync\2024 post doc\explainable survival prediction model\prism_github\venv_prism\Lib\site-packages\ipykernel\iostream.py:259(schedule)
+        2    0.000    0.000    0.000    0.000 {built-in method builtins.next}
+        1    0.000    0.000    0.000    0.000 c:\Users\Henry Pigot\Documents\MEGAsync\2024 post doc\explainable survival prediction model\prism_github\venv_prism\Lib\site-packages\memory_profiler.py:1201(choose_backend)
+        2    0.000    0.000    0.000    0.000 c:\Users\Henry Pigot\Documents\MEGAsync\2024 post doc\explainable survival prediction model\prism_github\venv_prism\Lib\site-packages\memory_profiler.py:740(_count_ctxmgr)
+      110    0.000    0.000    0.000    0.000 {method 'append' of 'list' objects}
+        1    0.000    0.000    0.000    0.000 C:\Users\Henry Pigot\AppData\Local\Programs\Python\Python311\Lib\contextlib.py:141(__exit__)
+        1    0.000    0.000    0.000    0.000 c:\Users\Henry Pigot\Documents\MEGAsync\2024 post doc\explainable survival prediction model\prism_github\venv_prism\Lib\site-packages\memory_profiler.py:748(wrap_function)
+        1    0.000    0.000    0.000    0.000 C:\Users\Henry Pigot\AppData\Local\Programs\Python\Python311\Lib\asyncio\coroutines.py:21(iscoroutinefunction)
+        1    0.000    0.000    0.000    0.000 C:\Users\Henry Pigot\AppData\Local\Programs\Python\Python311\Lib\contextlib.py:132(__enter__)
+        1    0.000    0.000    0.000    0.000 c:\Users\Henry Pigot\Documents\MEGAsync\2024 post doc\explainable survival prediction model\prism_github\venv_prism\Lib\site-packages\zmq\sugar\socket.py:626(send)
+        1    0.000    0.000    0.000    0.000 C:\Users\Henry Pigot\AppData\Local\Programs\Python\Python311\Lib\inspect.py:409(iscoroutinefunction)
+        2    0.000    0.000    0.000    0.000 c:\Users\Henry Pigot\Documents\MEGAsync\2024 post doc\explainable survival prediction model\prism_github\venv_prism\Lib\site-packages\ipykernel\iostream.py:550(_is_master_process)
+        1    0.000    0.000    0.000    0.000 C:\Users\Henry Pigot\AppData\Local\Programs\Python\Python311\Lib\inspect.py:391(_has_code_flag)
+        1    0.000    0.000    0.000    0.000 c:\Users\Henry Pigot\Documents\MEGAsync\2024 post doc\explainable survival prediction model\prism_github\venv_prism\Lib\site-packages\memory_profiler.py:775(enable_by_count)
+        1    0.000    0.000    0.000    0.000 C:\Users\Henry Pigot\AppData\Local\Programs\Python\Python311\Lib\threading.py:1185(is_alive)
+        1    0.000    0.000    0.000    0.000 c:\Users\Henry Pigot\Documents\MEGAsync\2024 post doc\explainable survival prediction model\prism_github\venv_prism\Lib\site-packages\memory_profiler.py:782(disable_by_count)
+        1    0.000    0.000    0.000    0.000 c:\Users\Henry Pigot\Documents\MEGAsync\2024 post doc\explainable survival prediction model\prism_github\venv_prism\Lib\site-packages\memory_profiler.py:842(enable)
+        1    0.000    0.000    0.000    0.000 C:\Users\Henry Pigot\AppData\Local\Programs\Python\Python311\Lib\contextlib.py:287(helper)
+        2    0.000    0.000    0.000    0.000 c:\Users\Henry Pigot\Documents\MEGAsync\2024 post doc\explainable survival prediction model\prism_github\venv_prism\Lib\site-packages\ipykernel\iostream.py:505(parent_header)
+        1    0.000    0.000    0.000    0.000 C:\Users\Henry Pigot\AppData\Local\Programs\Python\Python311\Lib\threading.py:1118(_wait_for_tstate_lock)
+        1    0.000    0.000    0.000    0.000 C:\Users\Henry Pigot\AppData\Local\Programs\Python\Python311\Lib\contextlib.py:104(__init__)
+        6    0.000    0.000    0.000    0.000 c:\Users\Henry Pigot\Documents\MEGAsync\2024 post doc\explainable survival prediction model\prism_github\venv_prism\Lib\site-packages\memory_profiler.py:1215(<genexpr>)
+        1    0.000    0.000    0.000    0.000 c:\Users\Henry Pigot\Documents\MEGAsync\2024 post doc\explainable survival prediction model\prism_github\venv_prism\Lib\site-packages\memory_profiler.py:853(show_results)
+        1    0.000    0.000    0.000    0.000 c:\Users\Henry Pigot\Documents\MEGAsync\2024 post doc\explainable survival prediction model\prism_github\venv_prism\Lib\site-packages\memory_profiler.py:849(disable)
+        1    0.000    0.000    0.000    0.000 C:\Users\Henry Pigot\AppData\Local\Programs\Python\Python311\Lib\inspect.py:300(ismethod)
+        2    0.000    0.000    0.000    0.000 {built-in method nt.getpid}
+        1    0.000    0.000    0.000    0.000 c:\Users\Henry Pigot\Documents\MEGAsync\2024 post doc\explainable survival prediction model\prism_github\venv_prism\Lib\site-packages\memory_profiler.py:640(__init__)
+        1    0.000    0.000    0.000    0.000 {method 'disable' of '_lsprof.Profiler' objects}
+        1    0.000    0.000    0.000    0.000 c:\Users\Henry Pigot\Documents\MEGAsync\2024 post doc\explainable survival prediction model\prism_github\venv_prism\Lib\site-packages\memory_profiler.py:689(items)
+        1    0.000    0.000    0.000    0.000 C:\Users\Henry Pigot\AppData\Local\Programs\Python\Python311\Lib\inspect.py:378(isfunction)
+        1    0.000    0.000    0.000    0.000 c:\Users\Henry Pigot\Documents\MEGAsync\2024 post doc\explainable survival prediction model\prism_github\venv_prism\Lib\site-packages\ipykernel\iostream.py:138(_event_pipe)
+        2    0.000    0.000    0.000    0.000 {method 'items' of 'dict' objects}
+        1    0.000    0.000    0.000    0.000 C:\Users\Henry Pigot\AppData\Local\Programs\Python\Python311\Lib\functools.py:421(_unwrap_partial)
+        1    0.000    0.000    0.000    0.000 {method 'acquire' of '_thread.lock' objects}
+        2    0.000    0.000    0.000    0.000 {method 'write' of '_io.StringIO' objects}
+        1    0.000    0.000    0.000    0.000 {method 'endswith' of 'str' objects}
+        3    0.000    0.000    0.000    0.000 {built-in method builtins.getattr}
+        2    0.000    0.000    0.000    0.000 {built-in method sys.settrace}
+        1    0.000    0.000    0.000    0.000 {method 'startswith' of 'str' objects}
+        2    0.000    0.000    0.000    0.000 {method '__exit__' of '_thread.RLock' objects}
+        1    0.000    0.000    0.000    0.000 {method 'append' of 'collections.deque' objects}
+        2    0.000    0.000    0.000    0.000 {built-in method builtins.len}
+        2    0.000    0.000    0.000    0.000 {method 'get' of '_contextvars.ContextVar' objects}
+        1    0.000    0.000    0.000    0.000 {method 'update' of 'dict' objects}
+        1    0.000    0.000    0.000    0.000 {method 'pop' of 'list' objects}
+        1    0.000    0.000    0.000    0.000 c:\Users\Henry Pigot\Documents\MEGAsync\2024 post doc\explainable survival prediction model\prism_github\venv_prism\Lib\site-packages\dateutil\tz\tz.py:74(utcoffset)
+        1    0.000    0.000    0.000    0.000 C:\Users\Henry Pigot\AppData\Local\Programs\Python\Python311\Lib\threading.py:568(is_set)
+        1    0.000    0.000    0.000    0.000 {method 'insert' of 'list' objects}
+        1    0.000    0.000    0.000    0.000 {built-in method sys.gettrace}
+
+
+
+Memory usage: current=0.0MB, peak=0.0MB
+CPU usage: 66.1%

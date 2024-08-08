@@ -100,34 +100,47 @@ class PartialResponseCalculator:
         n_features = x.shape[1]
         n_samples = x.shape[0]
         x = x.to(self.device)
-
+        
+        # Preallocate tensors
         univariate_responses = torch.zeros((n_samples, n_features), device=self.device)
-        for i in range(n_features):
-            for k in range(n_samples):
-                x_i = x.clone()
-                x_i[:, i] = x[k, i]
-                y_i = self.predict(x_i)
-                logit_y_i = torch.log(y_i / (1 - y_i)).mean()
-                univariate_responses[k, i] = logit_y_i - self.logit_y0
-
-        bivariate_responses = []
+        n_bivariate = n_features * (n_features - 1) // 2
+        bivariate_responses = torch.zeros((n_samples, n_bivariate), device=self.device)
         bivariate_inputs = []
-        for i in range(n_features):
-            for j in range(i+1, n_features):
-                bivariate_response = torch.zeros(n_samples, device=self.device)
-                for k in range(n_samples):
-                    x_temp = x.clone()
-                    x_temp[:, i] = x[k, i]
-                    x_temp[:, j] = x[k, j]
-                    y_ij = self.predict(x_temp)
-                    logit_y_ij = torch.log(y_ij / (1 - y_ij)).mean()
-                    bivariate_response[k] = (logit_y_ij - self.logit_y0
-                                             - univariate_responses[k, i]
-                                             - univariate_responses[k, j])
-                bivariate_responses.append(bivariate_response)
-                bivariate_inputs.append((i, j))
 
-        bivariate_responses = torch.stack(bivariate_responses, dim=1)
+        # Preallocate reusable tensors
+        x_expanded = x.unsqueeze(0).repeat(n_samples, 1, 1)
+        x_reshaped = torch.zeros((n_samples * n_samples, n_features), device=self.device)
+
+        # Compute univariate responses (unchanged)
+        with torch.no_grad():
+            for i in range(n_features):
+                x_i = x_expanded.clone()
+                x_i[:, :, i] = x[:, i].unsqueeze(1).repeat(1, n_samples)
+                x_i = x_i.reshape(-1, n_features)
+                
+                y_i = self.predict(x_i)
+                logit_y_i = torch.log(y_i / (1 - y_i)).reshape(n_samples, n_samples).mean(dim=1)
+                univariate_responses[:, i] = logit_y_i - self.logit_y0
+
+        # Compute bivariate responses (with preallocated tensor)
+        with torch.no_grad():
+            biv_idx = 0
+            for i in range(n_features):
+                for j in range(i+1, n_features):
+                    x_ij = x_expanded.clone()
+                    x_ij[:, :, i] = x[:, i].unsqueeze(1).repeat(1, n_samples)
+                    x_ij[:, :, j] = x[:, j].unsqueeze(1).repeat(1, n_samples)
+                    x_ij = x_ij.reshape(-1, n_features)
+
+                    y_ij = self.predict(x_ij)
+                    logit_y_ij = torch.log(y_ij / (1 - y_ij)).reshape(n_samples, n_samples).mean(dim=1)
+                    
+                    bivariate_responses[:, biv_idx] = (logit_y_ij - self.logit_y0
+                                                    - univariate_responses[:, i]
+                                                    - univariate_responses[:, j])
+                    
+                    bivariate_inputs.append((i, j))
+                    biv_idx += 1
 
         return univariate_responses, bivariate_responses, bivariate_inputs
 
