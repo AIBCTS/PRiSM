@@ -3,10 +3,10 @@ import numpy as np
 from typing import Any, Tuple, List, Optional
 
 class PartialResponseCalculator:
-    def __init__(self, model: Any, method: str = 'dirac', device: str = 'cpu', input_dim: int = 1, x_train: Optional[torch.Tensor] = None):
+    def __init__(self, model: Any, method: str = 'dirac', device: Optional[str] = None, input_dim: int = 1, x_train: Optional[torch.Tensor] = None):
         self.model = model
         self.method = method
-        self.device = device
+        self.device = torch.device(device) if device is not None else next(model.parameters()).device if hasattr(model, 'parameters') else torch.device('cpu')
         self.input_dim = input_dim
         self.logit_y0 = None
         
@@ -31,6 +31,7 @@ class PartialResponseCalculator:
 
     def predict(self, x: torch.Tensor) -> torch.Tensor:
         """Make predictions using the given model."""
+        x = x.to(self.device)
         if hasattr(self.model, 'predict_proba'): # sklearn
             return torch.tensor(self.model.predict_proba(x.cpu().numpy())[:, 1], device=self.device).squeeze()
         else: # torch

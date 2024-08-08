@@ -4,7 +4,7 @@ import torch.nn as nn
 import torch.nn.init as init
 import torch.optim as optim
 from torch.utils.data import TensorDataset, DataLoader
-from typing import Any, Optional
+from typing import Any, Optional, Union
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -39,31 +39,38 @@ class MaskedMLP(nn.Module):
         x = self.fc2(x)
         return torch.sigmoid(x)
     
-    def predict(self, x, device='cpu'):
+    @torch.no_grad()
+    def predict(self, x: Union[np.ndarray, pd.DataFrame, torch.Tensor], device: Optional[str] = None) -> torch.Tensor:
         self.eval()
-        outputnp = False
+        
+        # Determine the device to use
+        if device is None:
+            device = next(self.parameters()).device
+        else:
+            device = torch.device(device)
+        
+        # Move the model to the specified device
+        self.to(device)
 
-        # Check if x is a NumPy ndarray or pandas DataFrame and convert it to a PyTorch tensor
+        # Convert input to tensor if necessary
         if isinstance(x, np.ndarray):
-            x = torch.tensor(x)
-            outputnp = True
+            x = torch.from_numpy(x)
         elif isinstance(x, pd.DataFrame):
-            x = torch.tensor(x.values)
-            outputnp = True
+            x = torch.from_numpy(x.values)
+        elif not isinstance(x, torch.Tensor):
+            raise TypeError("Input must be a numpy array, pandas DataFrame, or PyTorch tensor")
 
-        # Move tensor to the specified device
-        x = x.to(device).to(torch.float32)
+        # Ensure input is on the correct device and dtype
+        x = x.to(device=device, dtype=torch.float32)
 
-        with torch.no_grad():
-            outputs = self(x)
+        # Perform prediction
+        outputs = self(x)
+        
+        return outputs  # Return on the same device as input
 
-        # Convert outputs to a ndarray if input was a ndarray or DataFrame
-        if outputnp:
-            if device != 'cpu':
-                outputs = outputs.cpu()
-            outputs = outputs.numpy()
-
-        return outputs
+    @torch.no_grad()
+    def predict_numpy(self, x: Union[np.ndarray, pd.DataFrame], device: Optional[str] = None) -> np.ndarray:
+        return self.predict(x, device).cpu().numpy()
 
 def apply_mask(model):
     with torch.no_grad():
