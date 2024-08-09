@@ -43,7 +43,7 @@ For a full setup guide using Jupyter notebooks in VSCode, see
 make create_environment CUSTOM_PYTHON=/opt/python/3.11.7/bin/python3
 ```
 
-Once Jupyter is setup with the virtual envrionment in VScode, see [notebooks/4.01-hpi-unos-modelling-full.ipynb](notebooks/4.01-hpi-unos-modelling-full.ipynb) for an example runthrough of the PRiSM method (_to be replaced with a proper tutorial notebook_). The notebook can be opened directly in VS Code, or in Jupyter directly by running `jupyter notebook \notebooks\4.01-hpi-unos-modelling-full.ipynb`.
+Once Jupyter is setup with the virtual envrionment in VScode, see [notebooks/4.02-hpi-unos-modelling-full.ipynb](notebooks/4.02-hpi-unos-modelling-full.ipynb) for an example runthrough of the PRiSM method (_to be replaced with a proper tutorial notebook_). Alternatively, run it in Jupyter directly by with `jupyter notebook \notebooks\4.02-hpi-unos-modelling-full.ipynb`.
 
 Documentation for the PRiSM codebase will eventually be hosted via github pages, but for now it can be viewed locally. See [docs/README.md](docs/README.md).
 
