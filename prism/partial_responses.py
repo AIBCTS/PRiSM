@@ -54,7 +54,7 @@ class PartialResponseCalculator:
         elif self.method == 'lebesgue':
             return self._calculate_lebesgue(x)
         else:
-            raise ValueError(f"Method {self.method} not implemented")
+            raise ValueError(f"Method {self.method} not implemented. Choose 'dirac' or 'lebesgue'.")
 
     def calculate_subset(self, x: torch.Tensor, n_steps: int = 15, categorical_threshold: int = 15, subtract_univariate: bool = False) -> Tuple[List[torch.Tensor], List[torch.Tensor], List[Tuple[int, int]], List[torch.Tensor], List[torch.Tensor]]:
         if self.method == 'dirac':
@@ -69,6 +69,7 @@ class PartialResponseCalculator:
     def _calculate_dirac(self, x: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, List[Tuple[int, int]]]:
         n_features = x.shape[1]
         n_samples = x.shape[0]
+        x = x.to(self.device)
 
         univariate_responses = torch.zeros((n_samples, n_features), device=self.device)
         for i in range(n_features):
@@ -110,7 +111,7 @@ class PartialResponseCalculator:
 
         # Preallocate reusable tensors
         x_expanded = x.unsqueeze(0).repeat(n_samples, 1, 1)
-        x_reshaped = torch.zeros((n_samples * n_samples, n_features), device=self.device)
+        x_reshaped = torch.zeros((n_samples * n_samples, n_features), device=self.device) # TODO use this for reshaped x_ij
 
         # Compute univariate responses (unchanged)
         with torch.no_grad():
@@ -147,6 +148,7 @@ class PartialResponseCalculator:
 
     def _calculate_dirac_subset(self, x: torch.Tensor, n_steps: int, categorical_threshold: int, subtract_univariate: bool) -> Tuple[List[torch.Tensor], List[torch.Tensor], List[Tuple[int, int]], List[torch.Tensor], List[torch.Tensor]]:
         n_features = x.shape[1]
+        x = x.to(self.device)
 
         univariate_responses = []
         x_univariate = []
@@ -236,7 +238,7 @@ def get_variable_range(x: torch.Tensor, n_steps: int, categorical_threshold: int
     if x.unique().shape[0] < categorical_threshold:
         return x.unique()
     else:
-        return torch.linspace(x.min(), x.max(), steps=n_steps)
+        return torch.linspace(x.min(), x.max(), steps=n_steps, device=x.device)
 
 def partial_responses(x_train: torch.Tensor, x_test: torch.Tensor, model: Any, method: str = 'dirac', device: str = 'cpu') -> Tuple[torch.Tensor, torch.Tensor, List[Tuple[int, int]]]:
     pr = PartialResponseCalculator(model, method, device, input_dim=x_train.shape[1], x_train=x_train)
@@ -249,6 +251,14 @@ def partial_responses(x_train: torch.Tensor, x_test: torch.Tensor, model: Any, m
     
     return train_responses, test_responses, bivariate_inputs
 
-def partial_responses_subset(x: torch.Tensor, model: Any, method: str = 'dirac', device: str = 'cpu', n_steps: int = 15, categorical_threshold: int = 15, subtract_univariate: bool = False) -> Tuple[List[torch.Tensor], List[torch.Tensor], List[Tuple[int, int]], List[torch.Tensor], List[torch.Tensor]]:
+def partial_responses_subset(x: torch.Tensor, model: Any, method: str = 'dirac', device: str = 'cpu', n_steps: int = 15, categorical_threshold: int = 15, subtract_univariate: bool = False) -> Tuple[List[np.ndarray], List[np.ndarray], List[Tuple[int, int]], List[np.ndarray], List[np.ndarray]]:
     pr = PartialResponseCalculator(model, method, device, input_dim=x.shape[1], x_train=x)
-    return pr.calculate_subset(x, n_steps, categorical_threshold, subtract_univariate)
+    univariate_responses, bivariate_responses, bivariate_inputs, x_univariate, x_bivariate = pr.calculate_subset(x, n_steps, categorical_threshold, subtract_univariate)
+    
+    # Convert PyTorch tensors to NumPy arrays
+    univariate_responses_np = [response.cpu().numpy() for response in univariate_responses]
+    bivariate_responses_np = [response.cpu().numpy() for response in bivariate_responses]
+    x_univariate_np = [x.cpu().numpy() for x in x_univariate]
+    x_bivariate_np = [x.cpu().numpy() for x in x_bivariate]
+    
+    return univariate_responses_np, bivariate_responses_np, bivariate_inputs, x_univariate_np, x_bivariate_np

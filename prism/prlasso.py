@@ -82,7 +82,7 @@ class LogisticRegressionModel(nn.Module):
 
 
 def run_glm_pytorch(i: int, lambdas: np.ndarray, partial_responses_train: np.ndarray, y_train: Union[np.ndarray, pd.Series], partial_responses_test: np.ndarray, y_test: Union[np.ndarray, pd.Series], num_epochs: int = 100000, lr: float = 0.001, tolerance: float = 1e-4) -> Tuple[int, np.ndarray, np.ndarray, np.ndarray, float, float, float, float, List[float], List[float]]:
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    device = 'cpu'
     model = LogisticRegressionModel(partial_responses_train.shape[1]).to(device)
     criterion = nn.BCELoss()
     optimizer = optim.Adam(model.parameters(), lr=lr, eps=1e-10)
@@ -196,9 +196,30 @@ def run_glm_sklearn(i: int, lambdas: np.ndarray, partial_responses_train: np.nda
     return i, beta, y_pred_train, y_pred_test, train_dev, test_dev, train_auc, test_auc, [train_bce_loss], [test_bce_loss]
 
 
-def prLASSO(partial_responses_train: np.ndarray, partial_responses_test: np.ndarray, y_train: Union[np.ndarray, pd.Series], y_test: Union[np.ndarray, pd.Series], num_lambdas: int = 25, verbose: bool = True, log_min_lambda: float = -3, log_max_lambda: float = 2, lasso_function: callable = run_glm_sklearn, lr: float = 0.001) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+def prLASSO(
+    partial_responses_train: Union[np.ndarray, torch.Tensor],
+    partial_responses_test: Union[np.ndarray, torch.Tensor],
+    y_train: Union[np.ndarray, pd.Series, torch.Tensor],
+    y_test: Union[np.ndarray, pd.Series, torch.Tensor],
+    num_lambdas: int = 25,
+    verbose: bool = True,
+    log_min_lambda: float = -3,
+    log_max_lambda: float = 2,
+    lasso_function: callable = run_glm_sklearn,
+    lr: float = 0.001
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    
+    # Convert inputs to numpy arrays if they're tensors
+    if isinstance(partial_responses_train, torch.Tensor):
+        partial_responses_train = partial_responses_train.cpu().numpy()
+    if isinstance(partial_responses_test, torch.Tensor):
+        partial_responses_test = partial_responses_test.cpu().numpy()
+    if isinstance(y_train, torch.Tensor):
+        y_train = y_train.cpu().numpy()
+    if isinstance(y_test, torch.Tensor):
+        y_test = y_test.cpu().numpy()
+
     num_features = partial_responses_train.shape[1]
-    # Solves quadratic equation for n*(n+1)/2 = num_features
     n_univ = int((np.sqrt(1 + 8 * num_features) - 1) / 2)
     n_biv = num_features - n_univ
     lambdas = np.logspace(log_max_lambda, log_min_lambda, num=num_lambdas)
@@ -215,10 +236,11 @@ def prLASSO(partial_responses_train: np.ndarray, partial_responses_test: np.ndar
 
     with ThreadPoolExecutor() as executor:
         futures = [executor.submit(lasso_function, i, lambdas, partial_responses_train,
-                                   y_train, partial_responses_test, y_test, lr=lr) for i in range(len(lambdas))]
+                                   y_train, partial_responses_test, y_test, lr=lr) 
+                   for i in range(len(lambdas))]
         for future in as_completed(futures):
             i, beta, y_pred_train, y_pred_test, train_dev, test_dev, train_auc, test_auc, train_losses, test_losses = future.result()
-            betas[:, i] = beta.flatten()  # Ensure beta is a 1D array
+            betas[:, i] = beta.flatten()
             glmPred[:, i] = y_pred_test
             trainDev[i] = train_dev
             testDev[i] = test_dev
@@ -229,7 +251,7 @@ def prLASSO(partial_responses_train: np.ndarray, partial_responses_test: np.ndar
             all_train_losses.append(train_losses)
             all_test_losses.append(test_losses)
             live_plot(all_train_losses, all_test_losses, lambdas,
-                      title=f'Normalized Losses (lr={lr})')
+                      title=f'BCE loss (lr={lr})')
             print(
                 f"{i:2d} - Lambda {lambdas[i]:.5f}: Test AUC {testAUC[i]:.4f}, n_univ: {univ_count[i]}, n_biv: {biv_count[i]}")
 

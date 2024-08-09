@@ -4,22 +4,23 @@ PRiSM (Partial Responses in Structured Models) is a method designed to transform
 
 ## Getting Started
 
-The PRiSM tool runs using `python`. To help with setup, we use `make`. Ensure you have `make` installed (exists by default on MacOS and Linux). For help with setting up make on Windows, see [this link](https://cookiecutter-data-science.drivendata.org/using-the-template/#installing-make-on-windows); we recommend using `chocolatey` or `scoop` to install `make`.
+The PRiSM tool runs using `python`. To help with setup, we use `make`. Ensure you have `make` installed (exists by default on MacOS and Linux). For help with setting up `make` on Windows, see [this link](https://cookiecutter-data-science.drivendata.org/using-the-template/#installing-make-on-windows); we recommend using `chocolatey` or `scoop` for the installation.
 
 See the [extra setup instructions](#extra-setup-instructions) to get started without `make`, using a GPU (CUDA), or using a specific python interpreter on your machine.
 
-Although you can run Jupyter notebooks directly in your browser with the python Jupyter package, we use VSCode. For a full setup guide using Jupyter notebooks in VSCode, see
+Although you can run Jupyter notebooks directly in your browser with the python Jupyter package, we use VSCode. Regardless of your operating system, the general workflow is:
+
+1. Download the project repository with `git clone https://github.com/AIBCTS/PRiSM.git` or by downloading a [.zip file of the repo](https://github.com/AIBCTS/PRiSM/archive/refs/heads/main.zip).
+2. Install Python 3.11
+3. Install Visual Studio Code
+4. Set up the project's virtual environment
+5. Configure VS Code for use with the project
+
+For a full setup guide using Jupyter notebooks in VSCode, see
 
 - [Windows Setup](SETUP_WINDOWS.md)
 - [Linux Setup](SETUP_LINUX.md)
 - [macOS Setup](SETUP_MACOS.md)
-
-Regardless of your operating system, the general workflow will be:
-
-1. Install Python 3.11
-2. Install Visual Studio Code
-3. Set up the project's virtual environment
-4. Configure VS Code for use with the project
 
 ### Extra setup instructions
 
