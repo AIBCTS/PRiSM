@@ -3,18 +3,17 @@ import matplotlib.gridspec as gridspec
 import torch
 import numpy as np
 from typing import Any, List, Tuple
+from prism.lasso_results import LassoResultsManager
 
 from prism.partial_responses import partial_responses_subset
 
 class NomogramGenerator:
-    def __init__(self, x: np.ndarray, x0_median: np.ndarray, x0_std: np.ndarray, 
-                 betas: np.ndarray, userLambda: int, n_steps: int = 15, 
-                 categorical_threshold: int = 15, sd_scale: float = 2):
+    def __init__(self, lasso_results: LassoResultsManager, x: np.ndarray, x0_median: np.ndarray, x0_std: np.ndarray, n_steps: int = 15, categorical_threshold: int = 15, sd_scale: float = 2):
+        self.lasso_results = lasso_results
         self.x = x
         self.x0_median = x0_median
         self.x0_std = x0_std
-        self.betas = betas
-        self.userLambda = userLambda
+        self.beta = lasso_results.get_selected_beta()
         self.n_steps = n_steps
         self.categorical_threshold = categorical_threshold
         self.sd_scale = sd_scale
@@ -25,7 +24,7 @@ class NomogramGenerator:
     def generate_main_nomogram(self, univariate_responses: List[np.ndarray], x_univariate: List[np.ndarray], 
                                bivariate_responses: List[np.ndarray], x_bivariate: List[np.ndarray], 
                                bivariate_inputs: List[Tuple[int, int]]):
-        active_features = np.where(np.abs(self.betas[:, self.userLambda]) > 0.1)[0]
+        active_features = np.where(np.abs(self.beta) > 0.1)[0]
         univariate_features = active_features[active_features < self.x.shape[1]]
         bivariate_features = active_features[active_features >= self.x.shape[1]] - self.x.shape[1]
 
@@ -208,9 +207,8 @@ class NomogramGenerator:
         for i, (f1, f2) in enumerate(bivariate_inputs):
             is_categorical1 = len(np.unique(self.x[:, f1])) < self.categorical_threshold
             is_categorical2 = len(np.unique(self.x[:, f2])) < self.categorical_threshold
-            if (is_categorical1 == is_categorical2) and np.abs(self.betas[self.x.shape[1] + i, self.userLambda]) > 0.1:
+            if (is_categorical1 == is_categorical2) and np.abs(self.beta[self.x.shape[1] + i]) > 0.1:
                 non_mixed_bivariate.append(i)
-
         if not non_mixed_bivariate:
             return None
 
@@ -273,7 +271,7 @@ class NomogramGenerator:
         ax.set_ylabel(f"Feature {feature2}")
         plt.colorbar(contour_heatmap, ax=ax, label='Log Odds Ratio')
 
-def nomogram(betas: np.ndarray, userLambda: int, x: torch.Tensor, 
+def nomogram(lasso_results: LassoResultsManager, x: torch.Tensor, 
              x0_median: np.ndarray, x0_std: np.ndarray, model: Any, 
              n_steps: int = 15, sd_scale: float = 2, 
              method: str = "dirac", device: str = "cpu", 
@@ -289,13 +287,12 @@ def nomogram(betas: np.ndarray, userLambda: int, x: torch.Tensor,
     )
 
     # Ensure inputs are numpy arrays
-    betas = np.asarray(betas)
     x = x.cpu().numpy()
     x0_median = np.asarray(x0_median)
     x0_std = np.asarray(x0_std)
     
     # Generate plots
-    nomogram_generator = NomogramGenerator(x, x0_median, x0_std, betas, userLambda, n_steps, categorical_threshold, sd_scale)
+    nomogram_generator = NomogramGenerator(lasso_results, x, x0_median, x0_std, n_steps, categorical_threshold, sd_scale)
     
     fig_main = nomogram_generator.generate_main_nomogram(univariate_responses, x_univariate, bivariate_responses, x_bivariate, bivariate_inputs)
     if fig_main:
