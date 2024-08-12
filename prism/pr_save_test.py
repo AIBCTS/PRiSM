@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import torch
 import pickle
-from prism.partial_responses_old import partialResponses
+from prism.obsolete.partial_responses_old import partialResponses
 from prism.config import MODELS_DIR
 
 def save_partial_responses(x_train, x_test, model, method="dirac", device="cpu", filename=MODELS_DIR.joinpath("partial_responses_data.pkl")):
@@ -34,6 +34,46 @@ def save_partial_responses(x_train, x_test, model, method="dirac", device="cpu",
     
     print(f"Data saved to {filename}")
     return partial_responses_train, partial_responses_test, bivariate_inputs
+
+def save_partial_responses_results(x_train, x_test, model, partial_responses_train, partial_responses_test, bivariate_inputs, method, device, filename=MODELS_DIR.joinpath("partial_responses_results.pkl")):
+    """
+    Save the results and arguments after running partial responses calculation.
+    
+    Args:
+    x_train (torch.Tensor): Training data
+    x_test (torch.Tensor): Test data
+    model: Trained model
+    partial_responses_train (torch.Tensor or np.ndarray): Partial responses for training data
+    partial_responses_test (torch.Tensor or np.ndarray): Partial responses for test data
+    bivariate_inputs (List[Tuple[int, int]]): List of bivariate input pairs
+    method (str): Method used for partial responses calculation
+    device (str): Device used for computation
+    filename (str): Name of the file to save the results
+    """
+    # Convert torch tensors to numpy arrays
+    x_train_np = x_train.cpu().numpy()
+    x_test_np = x_test.cpu().numpy()
+    
+    if isinstance(partial_responses_train, torch.Tensor):
+        partial_responses_train = partial_responses_train.cpu().numpy()
+    if isinstance(partial_responses_test, torch.Tensor):
+        partial_responses_test = partial_responses_test.cpu().numpy()
+
+    data_to_save = {
+        'x_train': x_train_np,
+        'x_test': x_test_np,
+        'model': model,
+        'partial_responses_train': partial_responses_train,
+        'partial_responses_test': partial_responses_test,
+        'bivariate_inputs': bivariate_inputs,
+        'method': method,
+        'device': str(device)
+    }
+    
+    with open(filename, 'wb') as f:
+        pickle.dump(data_to_save, f)
+    
+    print(f"Results and arguments saved to {filename}")
 
 def test_refactored_partial_responses(refactored_function, filename=MODELS_DIR.joinpath("partial_responses_data.pkl"),tensor_input=False):
     """

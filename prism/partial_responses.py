@@ -98,7 +98,7 @@ class PartialResponseCalculator:
 
         return univariate_responses, bivariate_responses, bivariate_inputs
 
-    def _calculate_lebesgue(self, x: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, List[Tuple[int, int]]]:
+    def _calculate_lebesgue(self, x: torch.Tensor, batch_size: int = 1024) -> Tuple[torch.Tensor, torch.Tensor, List[Tuple[int, int]]]:
         n_features = x.shape[1]
         n_samples = x.shape[0]
         x = x.to(self.device)
@@ -110,39 +110,69 @@ class PartialResponseCalculator:
         bivariate_inputs = []
 
         # Preallocate reusable tensors
-        x_expanded = x.unsqueeze(0).repeat(n_samples, 1, 1)
-        x_reshaped = torch.zeros((n_samples * n_samples, n_features), device=self.device) # TODO use this for reshaped x_ij
+        # x_expanded = x.unsqueeze(0).repeat(n_samples, 1, 1)
 
         # Compute univariate responses (unchanged)
         with torch.no_grad():
             for i in range(n_features):
-                x_i = x_expanded.clone()
-                x_i[:, :, i] = x[:, i].unsqueeze(1).repeat(1, n_samples)
-                x_i = x_i.reshape(-1, n_features)
-                
-                y_i = self.predict(x_i)
-                logit_y_i = torch.log(y_i / (1 - y_i)).reshape(n_samples, n_samples).mean(dim=1)
-                univariate_responses[:, i] = logit_y_i - self.logit_y0
+                for batch_start in range(0, n_samples, batch_size):
+                    batch_end = min(batch_start + batch_size, n_samples)
+                    batch_size_current = batch_end - batch_start
 
-        # Compute bivariate responses (with preallocated tensor)
-        with torch.no_grad():
+                    # Repeat x by batch size along new dimension
+                    x_i = x.unsqueeze(0).repeat(batch_size_current, 1, 1)
+
+                    # Replace ith value with current batch of values
+                    x_i[:, :, i] = x[batch_start:batch_end, i].unsqueeze(1).repeat(1, n_samples)
+
+                    # Reshape to (batch_size_current * n_samples, n_features)
+                    x_i = x_i.reshape(-1, n_features)
+                    
+                    y_i = self.predict(x_i)
+
+                    # Reshape and calculate mean
+                    logit_y_i = torch.log(y_i / (1 - y_i)).reshape(batch_size_current, n_samples).mean(dim=1)
+                    
+                    # Calculate univariate response for the current batch
+                    univariate_responses[batch_start:batch_end, i] = logit_y_i - self.logit_y0
+
             biv_idx = 0
             for i in range(n_features):
                 for j in range(i+1, n_features):
-                    x_ij = x_expanded.clone()
-                    x_ij[:, :, i] = x[:, i].unsqueeze(1).repeat(1, n_samples)
-                    x_ij[:, :, j] = x[:, j].unsqueeze(1).repeat(1, n_samples)
-                    x_ij = x_ij.reshape(-1, n_features)
+                    for batch_start in range(0, n_samples, batch_size):
+                        batch_end = min(batch_start + batch_size, n_samples)
+                        batch_size_current = batch_end - batch_start
 
-                    y_ij = self.predict(x_ij)
-                    logit_y_ij = torch.log(y_ij / (1 - y_ij)).reshape(n_samples, n_samples).mean(dim=1)
-                    
-                    bivariate_responses[:, biv_idx] = (logit_y_ij - self.logit_y0
-                                                    - univariate_responses[:, i]
-                                                    - univariate_responses[:, j])
-                    
+                        # Create batch for features i and j
+                        x_ij = x.unsqueeze(0).repeat(batch_size_current, 1, 1)
+                        
+                        # Set values for feature i
+                        x_ij[:, :, i] = x[batch_start:batch_end, i].unsqueeze(1).repeat(1, n_samples)
+                        
+                        # Set values for feature j (corrected)
+                        x_ij[:, :, j] = x[batch_start:batch_end, j].unsqueeze(1).repeat(1, n_samples)
+                        
+                        # Reshape to (batch_size_current * n_samples, n_features)
+                        x_ij = x_ij.reshape(-1, n_features)
+
+                        y_ij = self.predict(x_ij)
+                        
+                        # Reshape and calculate mean
+                        logit_y_ij = torch.log(y_ij / (1 - y_ij)).reshape(batch_size_current, n_samples).mean(dim=1)
+                        
+                        # Calculate bivariate response for the current batch
+                        bivariate_responses[batch_start:batch_end, biv_idx] = (
+                            logit_y_ij - self.logit_y0
+                            - univariate_responses[batch_start:batch_end, i]
+                            - univariate_responses[batch_start:batch_end, j]
+                        )
+
                     bivariate_inputs.append((i, j))
                     biv_idx += 1
+            
+            torch.cuda.synchronize()
+
+        torch.cuda.empty_cache()
 
         return univariate_responses, bivariate_responses, bivariate_inputs
 
