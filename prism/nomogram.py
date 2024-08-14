@@ -212,7 +212,7 @@ class NomogramGenerator:
         if not non_mixed_bivariate:
             return None
 
-        fig, axes = plt.subplots(len(non_mixed_bivariate), 1, figsize=(10, 5 * len(non_mixed_bivariate)))
+        fig, axes = plt.subplots(len(non_mixed_bivariate), 1, figsize=(6, 4 * len(non_mixed_bivariate)))
         if len(non_mixed_bivariate) == 1:
             axes = [axes]
 
@@ -276,7 +276,7 @@ def nomogram(lasso_results: LassoResultsManager, x: torch.Tensor,
              n_steps: int = 15, sd_scale: float = 2, 
              method: str = "dirac", device: str = "cpu", 
              categorical_threshold: int = 15,
-             subtract_univariate: bool = False) -> Tuple[List[np.ndarray], List[np.ndarray], List[np.ndarray], List[np.ndarray]]:
+             subtract_univariate: bool = True) -> Tuple[List[np.ndarray], List[np.ndarray], List[np.ndarray], List[np.ndarray]]:
     
 
     # Calculate subset of partial responses

@@ -1,6 +1,7 @@
 import torch
 import numpy as np
 from typing import Any, Tuple, List, Optional
+from prism.device_tools import device_empty_cache
 
 class PartialResponseCalculator:
     def __init__(self, model: Any, method: str = 'dirac', device: Optional[str] = None, input_dim: int = 1, x_train: Optional[torch.Tensor] = None):
@@ -15,22 +16,21 @@ class PartialResponseCalculator:
                 raise ValueError("x_train must be provided for the Lebesgue method")
             self.calculate_baseline(x_train)
         
-        # Check if the model is compatible
         self._check_model_compatibility(x_train)
 
     def _check_model_compatibility(self, x_train: Optional[torch.Tensor]):
         """Check if the model is compatible with the predict method."""
         try:
-            if self.method == 'dirac':
-                dummy_input = torch.zeros((1, self.input_dim), device=self.device)
-            else:  # lebesgue
-                dummy_input = x_train[:1].to(self.device)
-            _ = self.predict(dummy_input)
+            with torch.no_grad(), device_empty_cache(self.device):
+                if self.method == 'dirac':
+                    dummy_input = torch.zeros((1, self.input_dim), device=self.device)
+                else:  # lebesgue
+                    dummy_input = x_train[:1].to(self.device)
+                _ = self.predict(dummy_input)
         except Exception as e:
             raise ValueError(f"The provided model is not compatible with the predict method. Error: {str(e)}")
 
     def predict(self, x: torch.Tensor) -> torch.Tensor:
-        """Make predictions using the given model."""
         x = x.to(self.device)
         if hasattr(self.model, 'predict_proba'): # sklearn
             return torch.tensor(self.model.predict_proba(x.cpu().numpy())[:, 1], device=self.device).squeeze()
@@ -38,63 +38,56 @@ class PartialResponseCalculator:
             return self.model.predict(x, device=self.device).squeeze()
 
     def calculate_baseline(self, x: torch.Tensor) -> None:
-        if self.method == 'dirac':
-            x0 = torch.zeros((1, self.input_dim), device=self.device)
-            y0 = self.predict(x0)
-            self.logit_y0 = torch.log(y0 / (1 - y0)).item()
-        else:  # lebesgue
-            y0 = self.predict(x)
-            self.logit_y0 = torch.log(y0 / (1 - y0)).mean().item()
+        with torch.no_grad(), device_empty_cache(self.device):
+            if self.method == 'dirac':
+                x0 = torch.zeros((1, self.input_dim), device=self.device)
+                y0 = self.predict(x0)
+                self.logit_y0 = torch.log(y0 / (1 - y0)).item()
+            else:  # lebesgue
+                y0 = self.predict(x)
+                self.logit_y0 = torch.log(y0 / (1 - y0)).mean().item()
 
-    def calculate(self, x: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, List[Tuple[int, int]]]:
-        if self.method == 'dirac':
-            if self.logit_y0 is None:
-                self.calculate_baseline(x)
-            return self._calculate_dirac(x)
-        elif self.method == 'lebesgue':
-            return self._calculate_lebesgue(x)
-        else:
-            raise ValueError(f"Method {self.method} not implemented. Choose 'dirac' or 'lebesgue'.")
-
-    def calculate_subset(self, x: torch.Tensor, n_steps: int = 15, categorical_threshold: int = 15, subtract_univariate: bool = False) -> Tuple[List[torch.Tensor], List[torch.Tensor], List[Tuple[int, int]], List[torch.Tensor], List[torch.Tensor]]:
-        if self.method == 'dirac':
-            if self.logit_y0 is None:
-                self.calculate_baseline(x)
-            return self._calculate_dirac_subset(x, n_steps, categorical_threshold, subtract_univariate)
-        elif self.method == 'lebesgue':
-            return self._calculate_lebesgue_subset(x, n_steps, categorical_threshold, subtract_univariate)
-        else:
-            raise ValueError(f"Method {self.method} not implemented. Choose 'dirac' or 'lebesgue'.")
+    def calculate(self, x: torch.Tensor, batch_size: int = 1024) -> Tuple[torch.Tensor, torch.Tensor, List[Tuple[int, int]]]:
+        with device_empty_cache(self.device):
+            if self.method == 'dirac':
+                if self.logit_y0 is None:
+                    self.calculate_baseline(x)
+                return self._calculate_dirac(x)
+            elif self.method == 'lebesgue':
+                return self._calculate_lebesgue(x, batch_size=batch_size)
+            else:
+                raise ValueError(f"Method {self.method} not implemented. Choose 'dirac' or 'lebesgue'.")
 
     def _calculate_dirac(self, x: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, List[Tuple[int, int]]]:
         n_features = x.shape[1]
         n_samples = x.shape[0]
         x = x.to(self.device)
 
-        univariate_responses = torch.zeros((n_samples, n_features), device=self.device)
-        for i in range(n_features):
-            x_i = torch.zeros((n_samples, n_features), device=self.device)
-            x_i[:, i] = x[:, i]
-            
-            y_i = self.predict(x_i)
-            univariate_responses[:, i] = torch.log(y_i / (1 - y_i)) - self.logit_y0
+        with torch.no_grad():
+            univariate_responses = torch.zeros((n_samples, n_features), device=self.device)
+            for i in range(n_features):
+                x_i = torch.zeros((n_samples, n_features), device=self.device)
+                x_i[:, i] = x[:, i]
+                
+                y_i = self.predict(x_i)
+                univariate_responses[:, i] = torch.log(y_i / (1 - y_i)) - self.logit_y0
 
-        bivariate_responses = []
-        bivariate_inputs = []
-        for i in range(n_features):
-            for j in range(i+1, n_features):
-                x_input = torch.zeros((n_samples, n_features), device=self.device)
-                x_input[:, i] = x[:, i]
-                x_input[:, j] = x[:, j]
+            bivariate_responses = []
+            bivariate_inputs = []
+            for i in range(n_features):
+                for j in range(i+1, n_features):
+                    x_input = torch.zeros((n_samples, n_features), device=self.device)
+                    x_input[:, i] = x[:, i]
+                    x_input[:, j] = x[:, j]
 
-                y_ij = self.predict(x_input)
-                bivariate_response = (torch.log(y_ij / (1 - y_ij)) - self.logit_y0
-                                      - univariate_responses[:, i]
-                                      - univariate_responses[:, j])
-                bivariate_responses.append(bivariate_response)
-                bivariate_inputs.append((i, j))
+                    y_ij = self.predict(x_input)
+                    bivariate_response = (torch.log(y_ij / (1 - y_ij)) - self.logit_y0
+                                          - univariate_responses[:, i]
+                                          - univariate_responses[:, j])
+                    bivariate_responses.append(bivariate_response)
+                    bivariate_inputs.append((i, j))
 
-        bivariate_responses = torch.stack(bivariate_responses, dim=1)
+            bivariate_responses = torch.stack(bivariate_responses, dim=1)
 
         return univariate_responses, bivariate_responses, bivariate_inputs
 
@@ -103,18 +96,15 @@ class PartialResponseCalculator:
         n_samples = x.shape[0]
         x = x.to(self.device)
         
-        # Preallocate tensors
-        univariate_responses = torch.zeros((n_samples, n_features), device=self.device)
-        n_bivariate = n_features * (n_features - 1) // 2
-        bivariate_responses = torch.zeros((n_samples, n_bivariate), device=self.device)
-        bivariate_inputs = []
-
-        # Preallocate reusable tensors
-        # x_expanded = x.unsqueeze(0).repeat(n_samples, 1, 1)
-
-        # Compute univariate responses (unchanged)
         with torch.no_grad():
+            # Preallocate tensors
+            univariate_responses = torch.zeros((n_samples, n_features), device=self.device)
+            n_bivariate = n_features * (n_features - 1) // 2
+            bivariate_responses = torch.zeros((n_samples, n_bivariate), device=self.device)
+            bivariate_inputs = []
+
             for i in range(n_features):
+                print(f"Univariate {i}")
                 for batch_start in range(0, n_samples, batch_size):
                     batch_end = min(batch_start + batch_size, n_samples)
                     batch_size_current = batch_end - batch_start
@@ -136,9 +126,12 @@ class PartialResponseCalculator:
                     # Calculate univariate response for the current batch
                     univariate_responses[batch_start:batch_end, i] = logit_y_i - self.logit_y0
 
+                    #del x_i, y_i, logit_y_i
+
             biv_idx = 0
             for i in range(n_features):
                 for j in range(i+1, n_features):
+                    print(f"Bivariate {i},{j}")
                     for batch_start in range(0, n_samples, batch_size):
                         batch_end = min(batch_start + batch_size, n_samples)
                         batch_size_current = batch_end - batch_start
@@ -167,15 +160,23 @@ class PartialResponseCalculator:
                             - univariate_responses[batch_start:batch_end, j]
                         )
 
+                        #del x_ij, y_ij, logit_y_ij
+
                     bivariate_inputs.append((i, j))
                     biv_idx += 1
-            
-            torch.cuda.synchronize()
-
-        torch.cuda.empty_cache()
 
         return univariate_responses, bivariate_responses, bivariate_inputs
-
+    
+    def calculate_subset(self, x: torch.Tensor, n_steps: int = 15, categorical_threshold: int = 15, subtract_univariate: bool = False) -> Tuple[List[torch.Tensor], List[torch.Tensor], List[Tuple[int, int]], List[torch.Tensor], List[torch.Tensor]]:
+        if self.method == 'dirac':
+            if self.logit_y0 is None:
+                self.calculate_baseline(x)
+            return self._calculate_dirac_subset(x, n_steps, categorical_threshold, subtract_univariate)
+        elif self.method == 'lebesgue':
+            return self._calculate_lebesgue_subset(x, n_steps, categorical_threshold, subtract_univariate)
+        else:
+            raise ValueError(f"Method {self.method} not implemented. Choose 'dirac' or 'lebesgue'.")
+        
     def _calculate_dirac_subset(self, x: torch.Tensor, n_steps: int, categorical_threshold: int, subtract_univariate: bool) -> Tuple[List[torch.Tensor], List[torch.Tensor], List[Tuple[int, int]], List[torch.Tensor], List[torch.Tensor]]:
         n_features = x.shape[1]
         x = x.to(self.device)
@@ -270,18 +271,23 @@ def get_variable_range(x: torch.Tensor, n_steps: int, categorical_threshold: int
     else:
         return torch.linspace(x.min(), x.max(), steps=n_steps, device=x.device)
 
-def partial_responses(x_train: torch.Tensor, x_test: torch.Tensor, model: Any, method: str = 'dirac', device: str = 'cpu') -> Tuple[torch.Tensor, torch.Tensor, List[Tuple[int, int]]]:
-    pr = PartialResponseCalculator(model, method, device, input_dim=x_train.shape[1], x_train=x_train)
-    
-    univariate_train, bivariate_train, bivariate_inputs = pr.calculate(x_train)
-    univariate_test, bivariate_test, _ = pr.calculate(x_test)
-    
-    train_responses = torch.cat([univariate_train, bivariate_train], dim=1)
-    test_responses = torch.cat([univariate_test, bivariate_test], dim=1)
-    
+def partial_responses(x_train: torch.Tensor, x_test: torch.Tensor, model: Any, method: str = 'dirac', device: str = 'cpu', batch_size: int = 1024) -> Tuple[torch.Tensor, torch.Tensor, List[Tuple[int, int]]]:
+    with device_empty_cache(torch.device(device)):
+        pr = PartialResponseCalculator(model, method, device, input_dim=x_train.shape[1], x_train=x_train)
+        
+        univariate_train, bivariate_train, bivariate_inputs = pr.calculate(x_train, batch_size=batch_size)
+        univariate_test, bivariate_test, _ = pr.calculate(x_test, batch_size=batch_size)
+        
+        train_responses = torch.cat([univariate_train, bivariate_train], dim=1)
+        test_responses = torch.cat([univariate_test, bivariate_test], dim=1)
+        
+        # Move results to CPU before returning
+        train_responses = train_responses.cpu()
+        test_responses = test_responses.cpu()
+
     return train_responses, test_responses, bivariate_inputs
 
-def partial_responses_subset(x: torch.Tensor, model: Any, method: str = 'dirac', device: str = 'cpu', n_steps: int = 15, categorical_threshold: int = 15, subtract_univariate: bool = False) -> Tuple[List[np.ndarray], List[np.ndarray], List[Tuple[int, int]], List[np.ndarray], List[np.ndarray]]:
+def partial_responses_subset(x: torch.Tensor, model: Any, method: str = 'dirac', device: str = 'cpu', n_steps: int = 15, categorical_threshold: int = 15, subtract_univariate: bool = True) -> Tuple[List[np.ndarray], List[np.ndarray], List[Tuple[int, int]], List[np.ndarray], List[np.ndarray]]:
     pr = PartialResponseCalculator(model, method, device, input_dim=x.shape[1], x_train=x)
     univariate_responses, bivariate_responses, bivariate_inputs, x_univariate, x_bivariate = pr.calculate_subset(x, n_steps, categorical_threshold, subtract_univariate)
     

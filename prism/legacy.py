@@ -30,6 +30,7 @@ import torch.optim as optim
 from torch.utils.data import TensorDataset, DataLoader
 
 from prism.maskedmlp import MaskedMLP
+from prism.device_tools import get_device
 
 Seed = 257
 
@@ -70,7 +71,7 @@ def normalise(data: pd.DataFrame, test: Optional[pd.DataFrame] = None, sd_scale:
     return x_train
 
 def bootstrap_auc_ci(pred, target, n_bootstraps=100, alpha=0.05):
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    device = torch.device(get_device())
 
     pred = torch.tensor(pred, device=device)
     target = torch.tensor(target, device=device)
