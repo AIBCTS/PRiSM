@@ -30,11 +30,11 @@ For a full setup guide using Jupyter notebooks in VSCode, see
 2. Create the virtual environment in the project directory using `python -m venv venv_prism --clear --copies` and activate it (e.g. `.\venv_prism\Scripts\activate` on Windows)
 3. Run `pip install -r requirements.txt` to install all packages
 
-**If you want to use CUDA to run the project with your dedicated (NVIDIA) graphics card** on Windows,
+**If you want to use CUDA to run the project with your dedicated (NVIDIA) graphics card** on Windows (or Linux),
 
 1. Create the virtual environment in the project directory using `python -m venv venv_prism --clear --copies` and activate it (e.g. `.\venv_prism\Scripts\activate` on Windows)
 2. Ensure pip is up to date `python -m pip install --upgrade pip`
-3. Install pytorch version 2.3.1 with CUDA compatability `pip install torch==2.3.1 torchvision==0.18.1 torchaudio==2.3.1 --index-url https://download.pytorch.org/whl/cu121` You may need to choose a different CUDA version if your hardware is not CUDA 12.1 or later (e.g. CUDA 11.x), see [this link](pip install torch==2.3.1 torchvision==0.18.1 torchaudio==2.3.1 --index-url https://download.pytorch.org/whl/cu121) for options.
+3. Install pytorch version 2.3.1 with CUDA compatability `pip install torch==2.3.1 torchvision==0.18.1 torchaudio==2.3.1 --index-url https://download.pytorch.org/whl/cu121` You may need to choose a different CUDA version if your hardware is not CUDA 12.1 or later (e.g. CUDA 11.x), see [this link](https://pytorch.org/get-started/previous-versions/#linux-and-windows-1) for viable torch 2.3.1 install options.
 4. Run `pip install -r requirements.txt` to install the remaining requirements. Since torch 2.3.1 is already installed, it should not overwrite the previously installed CUDA enabled package.
 
 **If you need to specify a specific python interpreter**, rather than that which is assigned to `python` or `python3` by default on your system, you can specify it when creating the `venv` with `make` (e.g. for an interpreter located at `/opt/python/3.11.7/bin/python3`):
@@ -43,7 +43,7 @@ For a full setup guide using Jupyter notebooks in VSCode, see
 make create_environment CUSTOM_PYTHON=/opt/python/3.11.7/bin/python3
 ```
 
-Once Jupyter is setup with the virtual envrionment in VScode, see [notebooks/4.02-hpi-unos-modelling-full.ipynb](notebooks/4.02-hpi-unos-modelling-full.ipynb) for an example runthrough of the PRiSM method (_to be replaced with a proper tutorial notebook_). Alternatively, run it in Jupyter directly by with `jupyter notebook \notebooks\4.02-hpi-unos-modelling-full.ipynb`.
+Once Jupyter is setup with the virtual envrionment in VScode, see [notebooks/4.05-hpi-unos-full-dir-cpu.ipynb](notebooks/4.05-hpi-unos-full-dir-cpu.ipynb) for an example runthrough of the PRiSM method (_to be replaced with a proper tutorial notebook_). Alternatively, run it in Jupyter directly by with `jupyter notebook /notebooks/4.05-hpi-unos-full-dir-cpu.ipynb`.
 
 Documentation for the PRiSM codebase will eventually be hosted via github pages, but for now it can be viewed locally. See [docs/README.md](docs/README.md).
 
