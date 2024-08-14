@@ -9,8 +9,10 @@ def device_empty_cache(device: torch.device):
         yield
     finally:
         if device.type == 'cuda':
+            torch.cuda.synchronize()
             torch.cuda.empty_cache()
         elif device.type == 'mps':
+            torch.mps.synchronize()
             torch.mps.empty_cache()
 
 def print_tensor_info():
