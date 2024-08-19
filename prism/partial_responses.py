@@ -1,15 +1,19 @@
 import torch
 import numpy as np
+import copy
 from typing import Any, Tuple, List, Optional
-from prism.device_tools import device_empty_cache
+from prism.device_tools import device_empty_cache, get_available_gpus, get_num_cpu_workers
+from itertools import combinations
+from concurrent.futures import ThreadPoolExecutor
 
 class PartialResponseCalculator:
     def __init__(self, model: Any, method: str = 'dirac', device: Optional[str] = None, input_dim: int = 1, x_train: Optional[torch.Tensor] = None):
-        self.model = model
+        self.original_model = model
         self.method = method
         self.device = torch.device(device) if device is not None else next(model.parameters()).device if hasattr(model, 'parameters') else torch.device('cpu')
         self.input_dim = input_dim
         self.logit_y0 = None
+        self.models = {}  # Dictionary to store model copies for each GPU
         
         if method == 'lebesgue':
             if x_train is None:
@@ -29,13 +33,17 @@ class PartialResponseCalculator:
             _ = self.predict(dummy_input)
         except Exception as e:
             raise ValueError(f"The provided model is not compatible with the predict method. Error: {str(e)}")
+        
+    def _prepare_multi_gpu(self, gpus: List[torch.device]):
+        for gpu in gpus:
+            self.models[gpu] = copy.deepcopy(self.original_model).to(gpu)
 
     def predict(self, x: torch.Tensor) -> torch.Tensor:
-        x = x.to(self.device)
-        if hasattr(self.model, 'predict_proba'): # sklearn
-            return torch.tensor(self.model.predict_proba(x.cpu().numpy())[:, 1], device=self.device).squeeze()
-        else: # torch
-            return self.model.predict(x, device=self.device).squeeze()
+        if x.device in self.models:
+            return self.models[x.device].predict(x).squeeze()
+        else:
+            return self.original_model.predict(x, device=self.device).squeeze()
+
 
     @torch.no_grad()
     def calculate_baseline(self, x: torch.Tensor) -> None:
@@ -48,14 +56,14 @@ class PartialResponseCalculator:
             self.logit_y0 = torch.log(y0 / (1 - y0)).mean().item()
 
     @torch.no_grad()
-    def calculate(self, x: torch.Tensor, batch_size: int = 1024) -> Tuple[torch.Tensor, torch.Tensor, List[Tuple[int, int]]]:
+    def calculate(self, x: torch.Tensor, batch_size: int = 1024, max_workers: int = 1) -> Tuple[torch.Tensor, torch.Tensor, List[Tuple[int, int]]]:
         with device_empty_cache(self.device):
             if self.method == 'dirac':
                 if self.logit_y0 is None:
                     self.calculate_baseline(x)
                 return self._calculate_dirac(x)
             elif self.method == 'lebesgue':
-                return self._calculate_lebesgue(x, batch_size=batch_size)
+                return self._calculate_lebesgue(x, batch_size=batch_size, max_workers=max_workers)
             else:
                 raise ValueError(f"Method {self.method} not implemented. Choose 'dirac' or 'lebesgue'.")
 
@@ -91,56 +99,72 @@ class PartialResponseCalculator:
 
         return univariate_responses, bivariate_responses, bivariate_inputs
 
-    def _calculate_lebesgue(self, x: torch.Tensor, batch_size: int = 1024) -> Tuple[torch.Tensor, torch.Tensor, List[Tuple[int, int]]]:
+    def _calculate_lebesgue(self, x: torch.Tensor, batch_size: int = 1024,max_workers: int = 1, multi_gpus: bool = False) -> Tuple[torch.Tensor, torch.Tensor, List[Tuple[int, int]]]:
         n_features = x.shape[1]
         n_samples = x.shape[0]
         x = x.to(self.device)
+        main_device = self.device
+        gpus = get_available_gpus() if multi_gpus else []
         
         # Preallocate tensors
-        univariate_responses = torch.zeros((n_samples, n_features), device=self.device)
+        univariate_responses = torch.zeros((n_samples, n_features), device=main_device)
         n_bivariate = n_features * (n_features - 1) // 2
-        bivariate_responses = torch.zeros((n_samples, n_bivariate), device=self.device)
-        bivariate_inputs = []
+        bivariate_responses = torch.zeros((n_samples, n_bivariate), device=main_device)
+        bivariate_inputs = list(combinations(range(n_features), 2))
 
-        for i in range(n_features):
-            print(f"Univariate {i}")
-            for batch_start in range(0, n_samples, batch_size):
-                batch_end = min(batch_start + batch_size, n_samples)
-                batch_size_current = batch_end - batch_start
+        try:
+            if multi_gpus:
+                self._prepare_multi_gpu(gpus)
+                # Pre-transfer x to all GPUs
+                x_on_gpus = {gpu: x.to(gpu) for gpu in gpus}
+            else:
+                x_on_gpus = {main_device: x}
+            
 
-                # Repeat x by batch size along new dimension
-                x_i = x.unsqueeze(0).repeat(batch_size_current, 1, 1)
+            def process_univariate(i):
+                device = gpus[i % len(gpus)] if gpus else main_device
+                print(f"Unvariate {i} on {device}")
+                response = torch.zeros(n_samples, device=device)
+                for batch_start in range(0, n_samples, batch_size):
+                    batch_end = min(batch_start + batch_size, n_samples)
+                    batch_size_current = batch_end - batch_start
 
-                # Replace ith value with current batch of values
-                x_i[:, :, i] = x[batch_start:batch_end, i].unsqueeze(1).repeat(1, n_samples)
+                    # Repeat x by batch size along new dimension
+                    x_i = x_on_gpus[device].unsqueeze(0).repeat(batch_size_current, 1, 1)
 
-                # Reshape to (batch_size_current * n_samples, n_features)
-                x_i = x_i.reshape(-1, n_features)
-                
-                y_i = self.predict(x_i)
+                    # Replace ith value with current batch of values
+                    x_i[:, :, i] = x_on_gpus[device][batch_start:batch_end, i].unsqueeze(1).repeat(1, n_samples)
 
-                # Reshape and calculate mean
-                logit_y_i = torch.log(y_i / (1 - y_i)).reshape(batch_size_current, n_samples).mean(dim=1)
-                
-                # Calculate univariate response for the current batch
-                univariate_responses[batch_start:batch_end, i] = logit_y_i - self.logit_y0
+                    # Reshape to (batch_size_current * n_samples, n_features)
+                    x_i = x_i.reshape(-1, n_features)
+                    
+                    y_i = self.predict(x_i)
 
-        biv_idx = 0
-        for i in range(n_features):
-            for j in range(i+1, n_features):
-                print(f"Bivariate {i},{j}")
+                    # Reshape and calculate mean
+                    logit_y_i = torch.log(y_i / (1 - y_i)).reshape(batch_size_current, n_samples).mean(dim=1)
+
+                    # Calculate univariate response for the current batch
+                    response[batch_start:batch_end] = logit_y_i - self.logit_y0
+
+                return i, response.to(main_device)
+
+            def process_bivariate(ij):
+                i, j = ij
+                device = gpus[(i * n_features + j) % len(gpus)] if gpus else main_device
+                print(f"Bivariate {i},{j} on {device}")
+                response = torch.zeros(n_samples, device=device)
                 for batch_start in range(0, n_samples, batch_size):
                     batch_end = min(batch_start + batch_size, n_samples)
                     batch_size_current = batch_end - batch_start
 
                     # Create batch for features i and j
-                    x_ij = x.unsqueeze(0).repeat(batch_size_current, 1, 1)
+                    x_ij = x_on_gpus[device].unsqueeze(0).repeat(batch_size_current, 1, 1)
                     
                     # Set values for feature i
-                    x_ij[:, :, i] = x[batch_start:batch_end, i].unsqueeze(1).repeat(1, n_samples)
+                    x_ij[:, :, i] = x_on_gpus[device][batch_start:batch_end, i].unsqueeze(1).repeat(1, n_samples)
                     
                     # Set values for feature j (corrected)
-                    x_ij[:, :, j] = x[batch_start:batch_end, j].unsqueeze(1).repeat(1, n_samples)
+                    x_ij[:, :, j] = x_on_gpus[device][batch_start:batch_end, j].unsqueeze(1).repeat(1, n_samples)
                     
                     # Reshape to (batch_size_current * n_samples, n_features)
                     x_ij = x_ij.reshape(-1, n_features)
@@ -151,14 +175,35 @@ class PartialResponseCalculator:
                     logit_y_ij = torch.log(y_ij / (1 - y_ij)).reshape(batch_size_current, n_samples).mean(dim=1)
                     
                     # Calculate bivariate response for the current batch
-                    bivariate_responses[batch_start:batch_end, biv_idx] = (
+                    response[batch_start:batch_end] = (
                         logit_y_ij - self.logit_y0
-                        - univariate_responses[batch_start:batch_end, i]
-                        - univariate_responses[batch_start:batch_end, j]
+                        - univariate_responses[batch_start:batch_end, i].to(device)
+                        - univariate_responses[batch_start:batch_end, j].to(device)
                     )
 
-                bivariate_inputs.append((i, j))
-                biv_idx += 1
+                return (i, j), response.to(main_device)
+
+            # Process univariate responses
+            with ThreadPoolExecutor(max_workers=max_workers) as executor:
+                for i, response in executor.map(process_univariate, range(n_features)):
+                    univariate_responses[:, i] = response
+
+            # Process bivariate responses
+            with ThreadPoolExecutor(max_workers=max_workers) as executor:
+                for (i, j), response in executor.map(process_bivariate, bivariate_inputs):
+                    idx = i * n_features + j - ((i + 2) * (i + 1)) // 2
+                    bivariate_responses[:, idx] = response
+
+        finally:
+            # Clean up GPU memory
+            if multi_gpus:
+                for gpu in gpus:
+                    if gpu in self.models:
+                        del self.models[gpu]
+                    if gpu in x_on_gpus:
+                        del x_on_gpus[gpu]
+                self.models.clear()
+            x_on_gpus.clear()
 
         return univariate_responses, bivariate_responses, bivariate_inputs
     
@@ -267,12 +312,12 @@ def get_variable_range(x: torch.Tensor, n_steps: int, categorical_threshold: int
     else:
         return torch.linspace(x.min(), x.max(), steps=n_steps, device=x.device)
 
-def partial_responses(x_train: torch.Tensor, x_test: torch.Tensor, model: Any, method: str = 'dirac', device: str = 'cpu', batch_size: int = 1024) -> Tuple[torch.Tensor, torch.Tensor, List[Tuple[int, int]]]:
+def partial_responses(x_train: torch.Tensor, x_test: torch.Tensor, model: Any, method: str = 'dirac', device: str = 'cpu', batch_size: int = 1024, max_workers = get_num_cpu_workers()) -> Tuple[torch.Tensor, torch.Tensor, List[Tuple[int, int]]]:
     with device_empty_cache(torch.device(device)):
         pr = PartialResponseCalculator(model, method, device, input_dim=x_train.shape[1], x_train=x_train)
         
-        univariate_train, bivariate_train, bivariate_inputs = pr.calculate(x_train, batch_size=batch_size)
-        univariate_test, bivariate_test, _ = pr.calculate(x_test, batch_size=batch_size)
+        univariate_train, bivariate_train, bivariate_inputs = pr.calculate(x_train, batch_size=batch_size, max_workers=max_workers)
+        univariate_test, bivariate_test, _ = pr.calculate(x_test, batch_size=batch_size, max_workers=max_workers)
         
         train_responses = torch.cat([univariate_train, bivariate_train], dim=1)
         test_responses = torch.cat([univariate_test, bivariate_test], dim=1)

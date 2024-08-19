@@ -2,6 +2,7 @@ import gc
 import inspect
 import torch
 from contextlib import contextmanager
+from typing import List
 
 @contextmanager
 def device_empty_cache(device: torch.device):
@@ -78,3 +79,26 @@ def get_device():
     """Return the first (usually best) available device: CUDA, MPS, or CPU."""
     available_devices = get_available_devices()
     return available_devices[0]
+
+def get_available_gpus() -> List[torch.device]:
+    """
+    Get a list of all available GPU devices (CUDA and MPS).
+    
+    Returns:
+        List[torch.device]: List of available GPU devices
+    """
+    gpus = []
+    if torch.cuda.is_available():
+        gpus.extend([torch.device(f'cuda:{i}') for i in range(torch.cuda.device_count())])
+    elif hasattr(torch.backends, 'mps') and torch.backends.mps.is_available():
+        gpus.append(torch.device('mps'))
+    return gpus
+
+def get_num_cpu_workers() -> int:
+    """
+    Get the number of CPU workers to use for parallel processing.
+    
+    Returns:
+        int: Number of CPU workers
+    """
+    return max(1, torch.multiprocessing.cpu_count() - 1)  # Leave one CPU core free

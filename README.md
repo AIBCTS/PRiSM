@@ -6,7 +6,11 @@ PRiSM (Partial Responses in Structured Models) is a method designed to transform
 
 The PRiSM tool runs using `python`. To help with setup, we use `make`. Ensure you have `make` installed (exists by default on MacOS and Linux). For help with setting up `make` on Windows, see [this link](https://cookiecutter-data-science.drivendata.org/using-the-template/#installing-make-on-windows); we recommend using `chocolatey` or `scoop` for the installation.
 
-See the [extra setup instructions](#extra-setup-instructions) to get started without `make`, using a GPU (CUDA), or using a specific python interpreter on your machine.
+See the [extra setup instructions](#extra-setup-instructions) if you'd like to get started with any of the following:
+
+- without `make`, 
+- using a GPU (CUDA or MPS) 
+- using a specific (non-default) python interpreter on your machine.
 
 Although you can run Jupyter notebooks directly in your browser with the python Jupyter package, we use VSCode. Regardless of your operating system, the general workflow is:
 
@@ -22,6 +26,10 @@ For a full setup guide using Jupyter notebooks in VSCode, see
 - [Linux Setup](SETUP_LINUX.md)
 - [macOS Setup](SETUP_MACOS.md)
 
+Once Jupyter is setup with the virtual envrionment in VScode, see [notebooks/4.05-hpi-unos-full-dir-cpu.ipynb](notebooks/4.05-hpi-unos-full-dir-cpu.ipynb) for an example runthrough of the PRiSM method (_to be replaced with a proper tutorial notebook_). Alternatively, run it in Jupyter directly by with `jupyter notebook /notebooks/4.05-hpi-unos-full-dir-cpu.ipynb`.
+
+Documentation for the PRiSM codebase will eventually be hosted via github pages, but for now it can be viewed locally. See [docs/README.md](docs/README.md).
+
 ### Extra setup instructions
 
 **If you have trouble with `make`**, you can 
@@ -34,18 +42,32 @@ For a full setup guide using Jupyter notebooks in VSCode, see
 
 1. Create the virtual environment in the project directory using `python -m venv venv_prism --clear --copies` and activate it (e.g. `.\venv_prism\Scripts\activate` on Windows)
 2. Ensure pip is up to date `python -m pip install --upgrade pip`
-3. Install pytorch version 2.3.1 with CUDA compatability `pip install torch==2.3.1 torchvision==0.18.1 torchaudio==2.3.1 --index-url https://download.pytorch.org/whl/cu121` You may need to choose a different CUDA version if your hardware is not CUDA 12.1 or later (e.g. CUDA 11.x), see [this link](https://pytorch.org/get-started/previous-versions/#linux-and-windows-1) for viable torch 2.3.1 install options.
+3. Install pytorch version 2.3.1 with CUDA compatability `pip install torch==2.3.1 --index-url https://download.pytorch.org/whl/cu121` You may need to choose a different CUDA version if your hardware is not CUDA 12.1 or later (e.g. CUDA 11.x), see [this link](https://pytorch.org/get-started/previous-versions/#linux-and-windows-1) for viable torch 2.3.1 install options.
 4. Run `pip install -r requirements.txt` to install the remaining requirements. Since torch 2.3.1 is already installed, it should not overwrite the previously installed CUDA enabled package.
+5. Verify CUDA support by running this command in the terminal:
+   ```sh
+   python -c "import torch; print('CUDA available:', torch.cuda.is_available(), '| CUDA version:', torch.version.cuda if torch.cuda.is_available() else 'N/A', '| GPU:', torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'N/A')"
+   ```
+   If CUDA is available, it will return `True` for availability and show the CUDA version and GPU device name.
+
+**If you want to use MPS to run the project with your Apple Silicon integrated memory** on macOS,
+
+1. Ensure your macOS is up to date.
+2. Create the virtual environment in the project directory using `python3.11 -m venv venv_prism --clear --copies` and activate it with `source venv_prism/bin/activate`
+3. Ensure pip is up to date: `python -m pip install --upgrade pip`
+4. Install PyTorch 2.4 nightly with MPS support: `pip install --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/cpu`
+5. Run `pip install -r requirements.txt` to install the remaining requirements. Since PyTorch is already installed, it should not overwrite the previously installed MPS-enabled package.
+6. Verify MPS support by running this command in the terminal:
+   ```sh
+   python -c "import torch; print('MPS available:', torch.backends.mps.is_available())"
+   ```
+   If it returns `True`, MPS support is successfully enabled.
 
 **If you need to specify a specific python interpreter**, rather than that which is assigned to `python` or `python3` by default on your system, you can specify it when creating the `venv` with `make` (e.g. for an interpreter located at `/opt/python/3.11.7/bin/python3`):
 
-```bash
+```sh
 make create_environment CUSTOM_PYTHON=/opt/python/3.11.7/bin/python3
 ```
-
-Once Jupyter is setup with the virtual envrionment in VScode, see [notebooks/4.05-hpi-unos-full-dir-cpu.ipynb](notebooks/4.05-hpi-unos-full-dir-cpu.ipynb) for an example runthrough of the PRiSM method (_to be replaced with a proper tutorial notebook_). Alternatively, run it in Jupyter directly by with `jupyter notebook /notebooks/4.05-hpi-unos-full-dir-cpu.ipynb`.
-
-Documentation for the PRiSM codebase will eventually be hosted via github pages, but for now it can be viewed locally. See [docs/README.md](docs/README.md).
 
 ## Project Organization
 
