@@ -4,7 +4,7 @@ import copy
 from typing import Any, Tuple, List, Optional
 from prism.device_tools import device_empty_cache, get_available_gpus, get_num_cpu_workers
 from itertools import combinations
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 class PartialResponseCalculator:
     def __init__(self, model: Any, method: str = 'dirac', device: Optional[str] = None, input_dim: int = 1, x_train: Optional[torch.Tensor] = None):
@@ -120,79 +120,96 @@ class PartialResponseCalculator:
             else:
                 x_on_gpus = {main_device: x}
             
-
-            def process_univariate(i):
+            def process_univariate_batch(i, batch_start):
                 device = gpus[i % len(gpus)] if gpus else main_device
-                print(f"Unvariate {i} on {device}")
-                response = torch.zeros(n_samples, device=device)
-                for batch_start in range(0, n_samples, batch_size):
-                    batch_end = min(batch_start + batch_size, n_samples)
-                    batch_size_current = batch_end - batch_start
+                print(f"Univariate {i}, batch_start {batch_start}\t({device})")
+                
+                batch_end = min(batch_start + batch_size, n_samples)
+                batch_size_current = batch_end - batch_start
 
-                    # Repeat x by batch size along new dimension
-                    x_i = x_on_gpus[device].unsqueeze(0).repeat(batch_size_current, 1, 1)
+                # Repeat x by batch size along new dimension
+                x_i = x_on_gpus[device].unsqueeze(0).repeat(batch_size_current, 1, 1)
 
-                    # Replace ith value with current batch of values
-                    x_i[:, :, i] = x_on_gpus[device][batch_start:batch_end, i].unsqueeze(1).repeat(1, n_samples)
+                # Replace ith value with current batch of values
+                x_i[:, :, i] = x_on_gpus[device][batch_start:batch_end, i].unsqueeze(1).repeat(1, n_samples)
 
-                    # Reshape to (batch_size_current * n_samples, n_features)
-                    x_i = x_i.reshape(-1, n_features)
-                    
-                    y_i = self.predict(x_i)
+                # Reshape to (batch_size_current * n_samples, n_features)
+                x_i = x_i.reshape(-1, n_features)
+                
+                y_i = self.predict(x_i)
 
-                    # Reshape and calculate mean
-                    logit_y_i = torch.log(y_i / (1 - y_i)).reshape(batch_size_current, n_samples).mean(dim=1)
+                # Reshape and calculate mean
+                logit_y_i = torch.log(y_i / (1 - y_i)).reshape(batch_size_current, n_samples).mean(dim=1)
 
-                    # Calculate univariate response for the current batch
-                    response[batch_start:batch_end] = logit_y_i - self.logit_y0
+                # Calculate univariate response for the current batch
+                response = logit_y_i - self.logit_y0
 
-                return i, response.to(main_device)
-
-            def process_bivariate(ij):
+                return i, batch_start, response.to(main_device)
+            
+            def process_bivariate_batch(ij, batch_start):
                 i, j = ij
                 device = gpus[(i * n_features + j) % len(gpus)] if gpus else main_device
-                print(f"Bivariate {i},{j} on {device}")
-                response = torch.zeros(n_samples, device=device)
-                for batch_start in range(0, n_samples, batch_size):
-                    batch_end = min(batch_start + batch_size, n_samples)
-                    batch_size_current = batch_end - batch_start
+                print(f"Bivariate {i},{j}, batch_start {batch_start}\t({device})")
+                
+                batch_end = min(batch_start + batch_size, n_samples)
+                batch_size_current = batch_end - batch_start
 
-                    # Create batch for features i and j
-                    x_ij = x_on_gpus[device].unsqueeze(0).repeat(batch_size_current, 1, 1)
-                    
-                    # Set values for feature i
-                    x_ij[:, :, i] = x_on_gpus[device][batch_start:batch_end, i].unsqueeze(1).repeat(1, n_samples)
-                    
-                    # Set values for feature j (corrected)
-                    x_ij[:, :, j] = x_on_gpus[device][batch_start:batch_end, j].unsqueeze(1).repeat(1, n_samples)
-                    
-                    # Reshape to (batch_size_current * n_samples, n_features)
-                    x_ij = x_ij.reshape(-1, n_features)
+                # Create batch for features i and j
+                x_ij = x_on_gpus[device].unsqueeze(0).repeat(batch_size_current, 1, 1)
 
-                    y_ij = self.predict(x_ij)
-                    
-                    # Reshape and calculate mean
-                    logit_y_ij = torch.log(y_ij / (1 - y_ij)).reshape(batch_size_current, n_samples).mean(dim=1)
-                    
-                    # Calculate bivariate response for the current batch
-                    response[batch_start:batch_end] = (
-                        logit_y_ij - self.logit_y0
-                        - univariate_responses[batch_start:batch_end, i].to(device)
-                        - univariate_responses[batch_start:batch_end, j].to(device)
-                    )
+                # Set values for feature i
+                x_ij[:, :, i] = x_on_gpus[device][batch_start:batch_end, i].unsqueeze(1).repeat(1, n_samples)
+                
+                # Set values for feature j
+                x_ij[:, :, j] = x_on_gpus[device][batch_start:batch_end, j].unsqueeze(1).repeat(1, n_samples)
+                
+                # Reshape to (batch_size_current * n_samples, n_features)
+                x_ij = x_ij.reshape(-1, n_features)
 
-                return (i, j), response.to(main_device)
+                y_ij = self.predict(x_ij)
+                
+                # Reshape and calculate mean
+                logit_y_ij = torch.log(y_ij / (1 - y_ij)).reshape(batch_size_current, n_samples).mean(dim=1)
+                
+                # Calculate bivariate response for the current batch
+                response = (
+                    logit_y_ij - self.logit_y0
+                    - univariate_responses[batch_start:batch_end, i].to(device)
+                    - univariate_responses[batch_start:batch_end, j].to(device)
+                )
+
+                return (i, j), batch_start, response.to(main_device)
+
+            # Print resource status
+            print(f"Main compute device: {main_device}")
+            if gpus:
+                print("Workload spread to GPUs: ", ", ".join(gpus))
+            print(f"Max threads: {max_workers}")
 
             # Process univariate responses
             with ThreadPoolExecutor(max_workers=max_workers) as executor:
-                for i, response in executor.map(process_univariate, range(n_features)):
-                    univariate_responses[:, i] = response
+                futures = []
+                for i in range(n_features):
+                    for batch_start in range(0, n_samples, batch_size):
+                        futures.append(executor.submit(process_univariate_batch, i, batch_start))
+                
+                for future in as_completed(futures):
+                    i, batch_start, response = future.result()
+                    batch_end = min(batch_start + batch_size, n_samples)
+                    univariate_responses[batch_start:batch_end, i] = response
 
             # Process bivariate responses
             with ThreadPoolExecutor(max_workers=max_workers) as executor:
-                for (i, j), response in executor.map(process_bivariate, bivariate_inputs):
+                futures = []
+                for ij in bivariate_inputs:
+                    for batch_start in range(0, n_samples, batch_size):
+                        futures.append(executor.submit(process_bivariate_batch, ij, batch_start))
+                
+                for future in as_completed(futures):
+                    (i, j), batch_start, response = future.result()
+                    batch_end = min(batch_start + batch_size, n_samples)
                     idx = i * n_features + j - ((i + 2) * (i + 1)) // 2
-                    bivariate_responses[:, idx] = response
+                    bivariate_responses[batch_start:batch_end, idx] = response
 
         finally:
             # Clean up GPU memory
