@@ -122,7 +122,8 @@ class PartialResponseCalculator:
             
             def process_univariate_batch(i, batch_start):
                 device = gpus[i % len(gpus)] if gpus else main_device
-                print(f"Univariate {i}, batch_start {batch_start}\t({device})")
+                if batch_start==0:
+                    print(f"Univariate {i},\t({device})")
                 
                 batch_end = min(batch_start + batch_size, n_samples)
                 batch_size_current = batch_end - batch_start
@@ -149,7 +150,8 @@ class PartialResponseCalculator:
             def process_bivariate_batch(ij, batch_start):
                 i, j = ij
                 device = gpus[(i * n_features + j) % len(gpus)] if gpus else main_device
-                print(f"Bivariate {i},{j}, batch_start {batch_start}\t({device})")
+                if batch_start==0:
+                    print(f"Bivariate {i},{j},\t({device})")
                 
                 batch_end = min(batch_start + batch_size, n_samples)
                 batch_size_current = batch_end - batch_start
@@ -185,6 +187,7 @@ class PartialResponseCalculator:
             if gpus:
                 print("Workload spread to GPUs: ", ", ".join(gpus))
             print(f"Max threads: {max_workers}")
+            print(f"Batch size: {batch_size}")
 
             # Process univariate responses
             with ThreadPoolExecutor(max_workers=max_workers) as executor:

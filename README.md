@@ -55,7 +55,7 @@ Documentation for the PRiSM codebase will eventually be hosted via github pages,
 1. Ensure your macOS is up to date.
 2. Create the virtual environment in the project directory using `python3.11 -m venv venv_prism --clear --copies` and activate it with `source venv_prism/bin/activate`
 3. Ensure pip is up to date: `python -m pip install --upgrade pip`
-4. Install PyTorch 2.4 nightly with MPS support: `pip install --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/cpu`
+4. Install PyTorch 2.4 nightly with MPS support: `pip install --pre torch --index-url https://download.pytorch.org/whl/nightly/cpu`
 5. Run `pip install -r requirements.txt` to install the remaining requirements. Since PyTorch is already installed, it should not overwrite the previously installed MPS-enabled package.
 6. Verify MPS support by running this command in the terminal:
    ```sh

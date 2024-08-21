@@ -96,7 +96,7 @@ def get_available_gpus() -> List[torch.device]:
 
 def get_num_cpu_workers() -> int:
     """
-    Get the number of CPU workers to use for parallel processing.
+    Get the number of CPU workers to use for parallel processing (total number of cores - 1).
     
     Returns:
         int: Number of CPU workers
