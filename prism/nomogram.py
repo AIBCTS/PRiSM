@@ -4,7 +4,6 @@ import torch
 import numpy as np
 from typing import Any, List, Tuple
 from prism.lasso_results import LassoResultsManager
-
 from prism.partial_responses import partial_responses_subset
 
 class NomogramGenerator:
@@ -17,6 +16,7 @@ class NomogramGenerator:
         self.n_steps = n_steps
         self.categorical_threshold = categorical_threshold
         self.sd_scale = sd_scale
+        self.all_feature_names = lasso_results.all_feature_names
 
     def denormalize(self, x: np.ndarray, feature: int) -> np.ndarray:
         return x * (self.x0_std[feature] * self.sd_scale) + self.x0_median[feature]
@@ -105,7 +105,7 @@ class NomogramGenerator:
             self._plot_continuous_response(ax, feature, response, x_values)
 
         ax.axvline(0, color="black", alpha=0.5)
-        ax.set_ylabel(f"Feature {feature}", rotation=90, loc="center", labelpad=5)
+        ax.set_ylabel(self.all_feature_names[feature], rotation=90, loc="center", labelpad=5)
         ax.yaxis.tick_right()
 
     def _plot_categorical_response(self, ax, feature, response, x_values):
@@ -190,15 +190,15 @@ class NomogramGenerator:
 
         ax.axvline(0, color="black", alpha=0.5)
         ax.set_xlabel("Log Odds Ratio")
-        ax.set_ylabel(f"Feature {cont_feature}")
+        ax.set_ylabel(self.all_feature_names[cont_feature])
         
         # Move y-axis label to the left and keep ticks on the right
         ax.yaxis.set_label_position("left")
         ax.yaxis.tick_right()
 
         # Add legend
-        ax.legend(title=f"Feature {cat_feature}", fontsize=8, title_fontsize=10,
-                  loc='lower left', bbox_to_anchor=(0.05, 0.05), borderaxespad=0.)
+        ax.legend(title=self.all_feature_names[cat_feature], fontsize=8, title_fontsize=10,
+                loc='lower left', bbox_to_anchor=(0.05, 0.05), borderaxespad=0.)
 
     def generate_non_mixed_bivariate_nomogram(self, bivariate_responses: List[np.ndarray], 
                                               x_bivariate: List[np.ndarray], 
@@ -246,8 +246,8 @@ class NomogramGenerator:
         ax.set_yticks(range(len(np.unique(x2))))
         ax.set_xticklabels([f"{val:.2f}" for val in self.denormalize(np.unique(x1), feature1)])
         ax.set_yticklabels([f"{val:.2f}" for val in self.denormalize(np.unique(x2), feature2)])
-        ax.set_xlabel(f"Feature {feature1}")
-        ax.set_ylabel(f"Feature {feature2}")
+        ax.set_xlabel(self.all_feature_names[feature1])
+        ax.set_ylabel(self.all_feature_names[feature2])
         plt.colorbar(im, ax=ax, label='Log Odds Ratio')
 
         # Add text annotations
@@ -267,8 +267,8 @@ class NomogramGenerator:
         contour_lines = ax.contour(X, Y, Z, colors='white', alpha=0.5, levels=10)
         ax.clabel(contour_lines, inline=True, fontsize=8, fmt='%.2f')
         
-        ax.set_xlabel(f"Feature {feature1}")
-        ax.set_ylabel(f"Feature {feature2}")
+        ax.set_xlabel(self.all_feature_names[feature1])
+        ax.set_ylabel(self.all_feature_names[feature2])
         plt.colorbar(contour_heatmap, ax=ax, label='Log Odds Ratio')
 
 def nomogram(lasso_results: LassoResultsManager, x: torch.Tensor, 
