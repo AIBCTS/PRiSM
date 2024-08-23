@@ -274,64 +274,63 @@ def selectLambda(lambdas: List[float], betas: List[float], testAUC: List[float],
 # ### generateMask
 
 # %%
-def generateMask(betas: List[float], userLambda: float, x_train: pd.DataFrame, bivariate_inputs: List[int], subnet_nodes: int = 5) -> np.ndarray:
-  """
-  Generate a mask for the input features (partial responses) based on selected lambda and coefficients.
 
-  Parameters
-  ----------
-  betas : List[float]
-      Model paritial response coefficients.
-  userLambda : float
-      Selected lambda value.
-  x_train : pd.DataFrame
-      Training dataset.
-  bivariate_inputs : List[int]
-      Indices of features to be used for bivariate analysis.
-  subnet_nodes : int, optional
-      Number of subnet nodes for each input feature. Should match the subnet_nodes parameter provided when calling mlpmask.
+def generate_mask(betas: np.ndarray, userLambda: int, x_train: pd.DataFrame, bivariate_inputs: np.ndarray, subnet_nodes: int = 5, bivariate_only_if_univariate: bool = False, include_bivariate_as_univariate: bool = True, verbose: bool = True) -> np.ndarray:
+    num_features = x_train.shape[1]
+    active_indices = np.where(abs(betas[:, userLambda]) > 0.1)[0]
+    univ_active = [idx for idx in active_indices if idx < num_features]
+    pr_names = x_train.columns[univ_active].tolist()
 
-  Returns
-  -------
-  np.ndarray
-      Mask array for input features.
-  """
-  prNames = []
-  univList = []
-  bivList = []
-  prList = []
+    # Check for active bivariate features based on enforcement setting
+    biv_active_pairs = []
+    for idx in active_indices:
+        if idx >= num_features:
+            first, second = bivariate_inputs[idx - num_features]
+            if bivariate_only_if_univariate:
+                if first in univ_active and second in univ_active:
+                    biv_active_pairs.append((first, second))
+                    pr_names.append(
+                        f"{x_train.columns[int(first)]} : {x_train.columns[int(second)]}")
+            elif include_bivariate_as_univariate:
+                univ_active.extend(feature for feature in [first, second] if feature not in univ_active)
+                biv_active_pairs.append((first, second))
+                pr_names.append(
+                    f"{x_train.columns[int(first)]} : {x_train.columns[int(second)]}")
+            else:
+                biv_active_pairs.append((first, second))
+                pr_names.append(
+                    f"{x_train.columns[int(first)]} : {x_train.columns[int(second)]}")
 
+    # Create the mask
+    univ_active.sort()
+    nUniv = len(univ_active)
+    nBiv = len(biv_active_pairs)
+    mask = np.zeros((num_features, subnet_nodes * (nUniv + nBiv)))
 
-  for i in range(0,len(np.where(abs(betas[:,userLambda])>0.1)[0])):
-    prPosition = np.where(abs(betas[:,userLambda])>0.1)[0][i]
-    prList.append(prPosition)
-    if prPosition < x_train.shape[1]:
-      prNames.append(x_train.columns[prPosition])
-      univList.append(prPosition)
-    else:
-      prNames.append("{} : {}".format(x_train.columns[int(bivariate_inputs[prPosition-x_train.shape[1],0])],x_train.columns[int(bivariate_inputs[prPosition-x_train.shape[1],1])]))
-      bivList.append(prPosition-x_train.shape[1])
-      if int(bivariate_inputs[prPosition-x_train.shape[1],0]) not in univList:
-        univList.append(int(bivariate_inputs[prPosition-x_train.shape[1],0]))
-      if int(bivariate_inputs[prPosition-x_train.shape[1],1]) not in univList:
-        univList.append(int(bivariate_inputs[prPosition-x_train.shape[1],1]))
+    # Fill mask for univariate features
+    for i, idx in enumerate(univ_active):
+        mask[int(idx), i * subnet_nodes:(i + 1) * subnet_nodes] = 1
 
-  print(f"univList:{univList}")
-  print(f"bivList:{bivList}")
-  nUniv = len(univList)
-  nBiv = len(bivList)
-  nPr = nUniv + nBiv
+    # Fill mask for bivariate features
+    biv_start = nUniv * subnet_nodes
+    for i, (first, second) in enumerate(biv_active_pairs):
+        start_col = biv_start + i * subnet_nodes
+        end_col = start_col + subnet_nodes
+        mask[int(first), start_col:end_col] = 1
+        mask[int(second), start_col:end_col] = 1
 
-  #mask = np.zeros([nUniv,subnet_nodes*(nUniv+nBiv)])
-  mask = np.zeros([x_train.shape[1],subnet_nodes*(nUniv+nBiv)])
-  print(f"mask.shape: {mask.shape}")
-  print(f"prList: {prList}")
-  print(prNames)
+    if verbose:
+        print(pr_names)
+        fig, ax = plt.subplots()
+        heatmap = sns.heatmap(mask, ax=ax)
 
-  for i in list(range(0,nUniv)):
-    mask[univList[i],i*subnet_nodes:(i*subnet_nodes)+subnet_nodes] = 1
+        # Set the x and y axis labels
+        heatmap.set_xlabel('subnet index')
+        heatmap.set_ylabel('input features')
+        heatmap.set_title('input mask')
 
-  for i in range(0,nBiv):
-    mask[int(bivariate_inputs[bivList[i],0]),(nUniv*subnet_nodes)+(i*subnet_nodes):(nUniv*subnet_nodes)+(i*subnet_nodes)+subnet_nodes] = 1
-    mask[int(bivariate_inputs[bivList[i],1]),(nUniv*subnet_nodes)+(i*subnet_nodes):(nUniv*subnet_nodes)+(i*subnet_nodes)+subnet_nodes] = 1
-  return mask, nPr
+        # Set the y-tick labels
+        ax.set_yticklabels(x_train.columns.tolist(), rotation=0)
+        plt.show()
+
+    return mask, nUniv + nBiv

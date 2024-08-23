@@ -22,17 +22,15 @@ class NomogramGenerator:
         return x * (self.x0_std[feature] * self.sd_scale) + self.x0_median[feature]
 
     def generate_main_nomogram(self, univariate_responses: List[np.ndarray], x_univariate: List[np.ndarray], 
-                               bivariate_responses: List[np.ndarray], x_bivariate: List[np.ndarray], 
-                               bivariate_inputs: List[Tuple[int, int]]):
-        active_features = np.where(np.abs(self.beta) > 0.1)[0]
-        univariate_features = active_features[active_features < self.x.shape[1]]
-        bivariate_features = active_features[active_features >= self.x.shape[1]] - self.x.shape[1]
+                            bivariate_responses: List[np.ndarray], x_bivariate: List[np.ndarray]):
+        univariate_features = self.lasso_results.get_selected_univariate_indices()
+        bivariate_indices = self.lasso_results.get_selected_bivariate_indices()
+        bivariate_index_pairs = self.lasso_results.get_selected_bivariate_index_pairs()
 
         # Count mixed bivariate plots
         mixed_bivariate_count = sum(
-            1 for biv_index in bivariate_features
-            if (len(np.unique(self.x[:, bivariate_inputs[biv_index][0]])) < self.categorical_threshold) !=
-            (len(np.unique(self.x[:, bivariate_inputs[biv_index][1]])) < self.categorical_threshold)
+            1 for feature1, feature2 in bivariate_index_pairs
+            if self.lasso_results.is_mixed_bivariate(feature1, feature2, self.x, self.categorical_threshold)
         )
 
         num_plots = len(univariate_features) + mixed_bivariate_count
@@ -47,22 +45,19 @@ class NomogramGenerator:
         plot_index = 0
 
         # Plot univariate responses
-        for i, feature in enumerate(univariate_features):
+        for feature in univariate_features:
             ax = nomo.add_subplot(gs[plot_index])
             self._plot_univariate_response(ax, feature, univariate_responses[feature], x_univariate[feature])
             all_x_values.extend(univariate_responses[feature])
             plot_index += 1
 
         # Plot mixed bivariate responses
-        for i, biv_index in enumerate(bivariate_features):
-            feature1, feature2 = bivariate_inputs[biv_index]
-            is_categorical1 = len(np.unique(self.x[:, feature1])) < self.categorical_threshold
-            is_categorical2 = len(np.unique(self.x[:, feature2])) < self.categorical_threshold
-
-            if is_categorical1 != is_categorical2:  # Mixed case
+        for biv_index, (feature1, feature2) in zip(bivariate_indices, bivariate_index_pairs):
+            if self.lasso_results.is_mixed_bivariate(feature1, feature2, self.x, self.categorical_threshold):
                 ax = nomo.add_subplot(gs[plot_index])
                 response = bivariate_responses[biv_index]
                 x_values = x_bivariate[biv_index]
+                is_categorical1 = len(np.unique(self.x[:, feature1])) < self.categorical_threshold
                 self._plot_mixed_response(ax, response, x_values[:, 0], x_values[:, 1], feature1, feature2, is_categorical1)
                 all_x_values.extend(response)
                 plot_index += 1
@@ -201,14 +196,15 @@ class NomogramGenerator:
                 loc='lower left', bbox_to_anchor=(0.05, 0.05), borderaxespad=0.)
 
     def generate_non_mixed_bivariate_nomogram(self, bivariate_responses: List[np.ndarray], 
-                                              x_bivariate: List[np.ndarray], 
-                                              bivariate_inputs: List[Tuple[int, int]]):
+                                            x_bivariate: List[np.ndarray]):
+        bivariate_indices = self.lasso_results.get_selected_bivariate_indices()
+        bivariate_index_pairs = self.lasso_results.get_selected_bivariate_index_pairs()
+
         non_mixed_bivariate = []
-        for i, (f1, f2) in enumerate(bivariate_inputs):
-            is_categorical1 = len(np.unique(self.x[:, f1])) < self.categorical_threshold
-            is_categorical2 = len(np.unique(self.x[:, f2])) < self.categorical_threshold
-            if (is_categorical1 == is_categorical2) and np.abs(self.beta[self.x.shape[1] + i]) > 0.1:
-                non_mixed_bivariate.append(i)
+        for biv_index, (f1, f2) in zip(bivariate_indices, bivariate_index_pairs):
+            if not self.lasso_results.is_mixed_bivariate(f1, f2, self.x, self.categorical_threshold):
+                non_mixed_bivariate.append(biv_index)
+
         if not non_mixed_bivariate:
             return None
 
@@ -217,7 +213,7 @@ class NomogramGenerator:
             axes = [axes]
 
         for i, biv_index in enumerate(non_mixed_bivariate):
-            feature1, feature2 = bivariate_inputs[biv_index]
+            feature1, feature2 = self.lasso_results.bivariate_inputs[biv_index]
             response = bivariate_responses[biv_index]
             x_values = x_bivariate[biv_index]
             self._plot_bivariate_response(axes[i], response, x_values, (feature1, feature2))
@@ -280,7 +276,7 @@ def nomogram(lasso_results: LassoResultsManager, x: torch.Tensor,
     
 
     # Calculate subset of partial responses
-    univariate_responses, bivariate_responses, bivariate_inputs, x_univariate, x_bivariate = partial_responses_subset(
+    univariate_responses, bivariate_responses, x_univariate, x_bivariate = partial_responses_subset(
         x, model, method=method, device=device, n_steps=n_steps, 
         categorical_threshold=categorical_threshold,
         subtract_univariate=subtract_univariate
@@ -294,7 +290,7 @@ def nomogram(lasso_results: LassoResultsManager, x: torch.Tensor,
     # Generate plots
     nomogram_generator = NomogramGenerator(lasso_results, x, x0_median, x0_std, n_steps, categorical_threshold, sd_scale)
     
-    fig_main = nomogram_generator.generate_main_nomogram(univariate_responses, x_univariate, bivariate_responses, x_bivariate, bivariate_inputs)
+    fig_main = nomogram_generator.generate_main_nomogram(univariate_responses, x_univariate, bivariate_responses, x_bivariate)
     if fig_main:
         plt.figure(fig_main.number)
         plt.suptitle("Nomogram of univariate and mixed bivariate partial responses", y=1.02)
@@ -302,7 +298,7 @@ def nomogram(lasso_results: LassoResultsManager, x: torch.Tensor,
         plt.show()
 
     # Generate separate plot for non-mixed bivariate responses
-    fig_non_mixed = nomogram_generator.generate_non_mixed_bivariate_nomogram(bivariate_responses, x_bivariate, bivariate_inputs)
+    fig_non_mixed = nomogram_generator.generate_non_mixed_bivariate_nomogram(bivariate_responses, x_bivariate)
     if fig_non_mixed:
         plt.figure(fig_non_mixed.number)
         plt.suptitle("Nomogram of non-mixed bivariate partial responses", y=1.02)

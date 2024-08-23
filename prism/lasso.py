@@ -1,25 +1,55 @@
 import numpy as np
 import torch
 from sklearn.linear_model import LogisticRegression
-from typing import List, Optional, Tuple
-from prism.lasso_results import LassoResultsManager
+from sklearn.metrics import log_loss, roc_auc_score, accuracy_score
+from sklearn.exceptions import ConvergenceWarning
+from typing import List, Optional
 from joblib import Parallel, delayed
 from tqdm import tqdm
 import warnings
 import matplotlib.pyplot as plt
-from sklearn.metrics import log_loss, roc_auc_score
 from IPython.display import display, clear_output, HTML
+import time
 
-def _fit_lasso(X, y, lambda_val, max_iter, random_state, prev_coef=None):
+from prism.lasso_results import LassoResultsManager
+
+def _fit_lasso(X, y, lambda_val, max_iter, seed, prev_coef=None, tol=1e-4):
     C = 1 / lambda_val
     model = LogisticRegression(C=C, penalty='l1', solver='saga', max_iter=max_iter, 
-                               random_state=random_state, warm_start=True)
+                               random_state=seed, warm_start=True)
     if prev_coef is not None:
         model.classes_ = np.unique(y)
         model.coef_ = prev_coef.reshape(1, -1)
         model.intercept_ = np.array([0.0])
-    model.fit(X, y)
-    return model.coef_[0], model
+    
+    start_time = time.time()
+    convergence_warning = False
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        model.fit(X, y)
+        
+        if len(w) > 0 and issubclass(w[-1].category, ConvergenceWarning):
+            convergence_warning = True
+    
+    end_time = time.time()
+    fit_time = end_time - start_time
+    
+    y_pred = model.predict_proba(X)[:, 1]
+    train_loss = log_loss(y, y_pred)
+    train_accuracy = accuracy_score(y, model.predict(X))
+    non_zero_coef = np.sum(np.abs(model.coef_) > 1e-5)
+    
+    fit_info = {
+        'lambda': lambda_val,
+        'time': fit_time,
+        'loss': train_loss,
+        'accuracy': train_accuracy,
+        'non_zero_coef': non_zero_coef,
+        'iterations': model.n_iter_[0],
+        'converged': not convergence_warning
+    }
+    
+    return model.coef_[0], model, fit_info
 
 def plot_lasso_path(lambda_values, train_losses, test_losses, train_aucs, test_aucs,train_devs, test_devs):
     fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(8, 12))
@@ -53,16 +83,17 @@ def lasso(partial_responses_train: torch.Tensor,
           partial_responses_test: torch.Tensor, 
           y_train: np.ndarray, 
           y_test: np.ndarray, 
-          bivariate_inputs: List[Tuple[int, int]], 
           nlambda: int = 100, 
           feature_names: Optional[List[str]] = None,
           max_iter: int = 10000,
           min_lambda: float = 0.001,
           max_lambda: float = 1000,
           n_jobs: int = -1,
-          tol: float = 1e-4,
+          regression_tol: float =1e-4,
+          early_stopping_tol: float =1e-4,
           batch_size: int = 10,
-          real_time_plot: bool = True) -> 'LassoResultsManager':
+          real_time_plot: bool = True,
+          seed: int = 257) -> 'LassoResultsManager':
     """
     Perform LASSO regression on partial responses and return a LassoResultsManager object.
 
@@ -76,8 +107,6 @@ def lasso(partial_responses_train: torch.Tensor,
         Training target data, shape (n_samples_train,)
     y_test : np.ndarray
         Test target data, shape (n_samples_test,)
-    bivariate_inputs : List[Tuple[int, int]]
-        List of tuples containing indices for bivariate inputs
     nlambda : int, optional
         Number of lambda values to use (default is 100)
     feature_names : List[str], optional
@@ -94,8 +123,6 @@ def lasso(partial_responses_train: torch.Tensor,
     LassoResultsManager
         An object containing LASSO results and utility methods
     """
-    seed = 257
-
     # Convert torch tensors to numpy arrays
     partial_responses_train = partial_responses_train.cpu().numpy()
     partial_responses_test = partial_responses_test.cpu().numpy()
@@ -116,6 +143,7 @@ def lasso(partial_responses_train: torch.Tensor,
     # Initialize arrays to store results
     betas = np.zeros((num_features, nlambda))
     models = []
+    fit_infos = []
     train_losses = np.zeros(nlambda)
     test_losses = np.zeros(nlambda)
     train_aucs = np.zeros(nlambda)
@@ -152,14 +180,16 @@ def lasso(partial_responses_train: torch.Tensor,
                     lambda_val, 
                     max_iter, 
                     seed,
-                    betas[:, batch_start-1] if batch_start > 0 else None
+                    betas[:, batch_start-1] if batch_start > 0 else None,
+                    regression_tol
                 ) for lambda_val in batch_lambdas
             )
 
-            for i, (beta, model) in enumerate(results):
+            for i, (beta, model, fit_info) in enumerate(results):
                 idx = batch_start + i
                 betas[:, idx] = beta
                 models.append(model)
+                fit_infos.append(fit_info)
                 
                 # Calculate predictions
                 train_pred = model.predict_proba(partial_responses_train)[:, 1]
@@ -197,14 +227,23 @@ def lasso(partial_responses_train: torch.Tensor,
             if real_time_plot:
                 clear_output(wait=True)
                 fig = plot_lasso_path(lambda_values[:batch_end], train_losses[:batch_end], 
-                                      test_losses[:batch_end], train_aucs[:batch_end], test_aucs[:batch_end],
-                                      train_devs[:batch_end], test_devs[:batch_end])
+                                    test_losses[:batch_end], train_aucs[:batch_end], test_aucs[:batch_end],
+                                    train_devs[:batch_end], test_devs[:batch_end])
                 display(fig)
                 plt.close(fig)
                 display(HTML("<pre style='font-family: monospace;'>" + "\n".join(output_log) + "</pre>"))
 
+            # Print fit information for this batch
+            print("\nFit Information for Current Batch:")
+            for fit_info in fit_infos[-len(batch_lambdas):]:
+                print(f"Lambda: {fit_info['lambda']:.4f}\tTime: {fit_info['time']:.2f}s\t"
+                    f"Loss: {fit_info['loss']:.6f}\tAccuracy: {fit_info['accuracy']:.4f}\t"
+                    f"Non-zero coef: {fit_info['non_zero_coef']}\tIterations: {fit_info['iterations']}\t"
+                    f"{'Converged' if fit_info['converged'] else 'WARNING: No convergence'}")
+            print("\n")  # Add extra newline for separation
+
             # Check for early stopping
-            if batch_start > 0 and np.all(np.abs(betas[:, batch_end-1] - betas[:, batch_start-1]) < tol):
+            if batch_start > 0 and np.all(np.abs(betas[:, batch_end-1] - betas[:, batch_start-1]) < early_stopping_tol):
                 print(f"Early stopping at lambda index {batch_end-1}")
                 betas = betas[:, :batch_end]
                 lambda_values = lambda_values[:batch_end]
@@ -247,6 +286,16 @@ def lasso(partial_responses_train: torch.Tensor,
     plt.close(fig)
     display(HTML("<pre style='font-family: monospace;'>" + "\n".join(final_output_log) + "</pre>"))
 
+    # Print non-converged fits
+    non_converged = [info for info in fit_infos if not info['converged']]
+    if non_converged:
+        print("Fits that did not converge:")
+        for info in non_converged:
+            print(f"Lambda: {info['lambda']:.4f}\tLoss: {info['loss']:.6f}\t"
+                f"Iterations: {info['iterations']}")
+    else:
+        print("All fits converged successfully.")
+
     # Print warnings after the loop
     if len(w) > 0:
         print("\nWarnings encountered during LASSO regression:")
@@ -254,5 +303,5 @@ def lasso(partial_responses_train: torch.Tensor,
             print(warning.message)
 
     # Create and return LassoResultsManager
-    return LassoResultsManager(lambda_values, betas, models, feature_names, bivariate_inputs, 
+    return LassoResultsManager(lambda_values, betas, models, feature_names, 
                                train_losses, test_losses, train_aucs, test_aucs, train_devs, test_devs)

@@ -3,14 +3,14 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from typing import List, Dict, Any, Tuple
 from sklearn.linear_model import LogisticRegression
+from itertools import combinations
 
 class LassoResultsManager:
-    def __init__(self, lambdas: np.ndarray, betas: np.ndarray, models: List[LogisticRegression], feature_names: List[str], bivariate_inputs: List[Tuple[int, int]], train_losses: np.ndarray, test_losses: np.ndarray, train_aucs: np.ndarray, test_aucs: np.ndarray, train_devs: np.ndarray, test_devs: np.ndarray):
+    def __init__(self, lambdas: np.ndarray, betas: np.ndarray, models: List[LogisticRegression], feature_names: List[str], train_losses: np.ndarray, test_losses: np.ndarray, train_aucs: np.ndarray, test_aucs: np.ndarray, train_devs: np.ndarray, test_devs: np.ndarray):
         self.lambdas = lambdas
         self.betas = betas
         self.models = models
         self.univariate_feature_names = feature_names
-        self.bivariate_inputs = bivariate_inputs
         self.train_losses = train_losses
         self.test_losses = test_losses
         self.train_aucs = train_aucs
@@ -20,7 +20,8 @@ class LassoResultsManager:
         self.selected_lambda_index = None
         
         self.n_univ = len(feature_names)
-        self.n_biv = len(bivariate_inputs)
+        self.bivariate_inputs = list(combinations(range(self.n_univ), 2))
+        self.n_biv = len(self.bivariate_inputs)
         self.num_features = self.n_univ + self.n_biv
         
         self._generate_all_feature_names()
@@ -45,12 +46,28 @@ class LassoResultsManager:
             raise ValueError("No lambda selected")
         return self.models[self.selected_lambda_index]
 
-    def get_active_feature_indicies(self, threshold: float = 0.1) -> List[int]:
+    def get_selected_feature_indicies(self, threshold: float = 0.1) -> List[int]:
         beta = self.get_selected_beta()
         return np.where(np.abs(beta) > threshold)[0]
 
-    def get_active_feature_names(self, threshold: float = 0.1) -> List[str]:
-        return [self.all_feature_names[i] for i in self.get_active_feature_indicies(threshold=threshold)]
+    def get_selected_feature_names(self, threshold: float = 0.1) -> List[str]:
+        return [self.all_feature_names[i] for i in self.get_selected_feature_indicies(threshold=threshold)]
+
+    def get_selected_univariate_indices(self, threshold: float = 0.1) -> List[int]:
+        beta = self.get_selected_beta()
+        return [i for i in range(self.n_univ) if abs(beta[i]) > threshold]
+
+    def get_selected_bivariate_indices(self, threshold: float = 0.1) -> List[int]:
+        beta = self.get_selected_beta()
+        return [i - self.n_univ for i in range(self.n_univ, len(beta)) if abs(beta[i]) > threshold]
+
+    def get_selected_bivariate_index_pairs(self, threshold: float = 0.1) -> List[Tuple[int, int]]:
+        return [self.bivariate_inputs[i] for i in self.get_selected_bivariate_indices()]
+
+    def is_mixed_bivariate(self, feature1: int, feature2: int, x: np.ndarray, categorical_threshold: int) -> bool:
+        is_categorical1 = len(np.unique(x[:, feature1])) < categorical_threshold
+        is_categorical2 = len(np.unique(x[:, feature2])) < categorical_threshold
+        return is_categorical1 != is_categorical2
 
     def plot_lambda_path(self):
         plt.figure(figsize=(12, 6))
@@ -115,65 +132,65 @@ class LassoResultsManager:
                  include_bivariate_as_univariate: bool = True, 
                  verbose: bool = True) -> Tuple[np.ndarray, int]:
         """
-        Generate a mask for active features based on the selected beta.
+        Generate a mask for selected features based on the selected beta.
 
         Parameters:
         -----------
         threshold : float, optional
-            Threshold for considering a feature as active (default is 0.1)
+            Threshold for considering a feature as selected (default is 0.1)
         subnet_nodes : int, optional
             Number of subnet nodes for each feature (default is 5)
         bivariate_only_if_univariate : bool, optional
-            If True, include bivariate features only if both univariate features are active (default is False)
+            If True, include bivariate features only if both univariate features are selected (default is False)
         include_bivariate_as_univariate : bool, optional
-            If True, include univariate features of active bivariate features (default is True)
+            If True, include univariate features of selected bivariate features (default is True)
         verbose : bool, optional
-            If True, print active feature names and show heatmap of the mask (default is True)
+            If True, print selected feature names and show heatmap of the mask (default is True)
 
         Returns:
         --------
         Tuple[np.ndarray, int]
-            Mask array for active features and total number of active features
+            Mask array for selected features and total number of selected features
         """
         beta = self.get_selected_beta()
-        active_indices = np.where(np.abs(beta) > threshold)[0]
+        selected_indices = np.where(np.abs(beta) > threshold)[0]
         
-        univ_active = [idx for idx in active_indices if idx < self.n_univ]
-        pr_names = [self.univariate_feature_names[idx] for idx in univ_active]
+        univ_selected = [idx for idx in selected_indices if idx < self.n_univ]
+        pr_names = [self.univariate_feature_names[idx] for idx in univ_selected]
 
-        biv_active_pairs = []
-        for idx in active_indices:
+        biv_selected_pairs = []
+        for idx in selected_indices:
             if idx >= self.n_univ:
                 first, second = self.bivariate_inputs[idx - self.n_univ]
                 if bivariate_only_if_univariate:
-                    if first in univ_active and second in univ_active:
-                        biv_active_pairs.append((first, second))
+                    if first in univ_selected and second in univ_selected:
+                        biv_selected_pairs.append((first, second))
                         pr_names.append(f"{self.univariate_feature_names[first]} : {self.univariate_feature_names[second]}")
                 elif include_bivariate_as_univariate:
-                    univ_active.extend(feature for feature in [first, second] if feature not in univ_active)
-                    biv_active_pairs.append((first, second))
+                    univ_selected.extend(feature for feature in [first, second] if feature not in univ_selected)
+                    biv_selected_pairs.append((first, second))
                     pr_names.append(f"{self.univariate_feature_names[first]} : {self.univariate_feature_names[second]}")
                 else:
-                    biv_active_pairs.append((first, second))
+                    biv_selected_pairs.append((first, second))
                     pr_names.append(f"{self.univariate_feature_names[first]} : {self.univariate_feature_names[second]}")
 
-        univ_active = sorted(set(univ_active))
-        n_univ = len(univ_active)
-        n_biv = len(biv_active_pairs)
+        univ_selected = sorted(set(univ_selected))
+        n_univ = len(univ_selected)
+        n_biv = len(biv_selected_pairs)
         mask = np.zeros((self.n_univ, subnet_nodes * (n_univ + n_biv)))
 
-        for i, idx in enumerate(univ_active):
+        for i, idx in enumerate(univ_selected):
             mask[idx, i * subnet_nodes:(i + 1) * subnet_nodes] = 1
 
         biv_start = n_univ * subnet_nodes
-        for i, (first, second) in enumerate(biv_active_pairs):
+        for i, (first, second) in enumerate(biv_selected_pairs):
             start_col = biv_start + i * subnet_nodes
             end_col = start_col + subnet_nodes
             mask[first, start_col:end_col] = 1
             mask[second, start_col:end_col] = 1
 
         if verbose:
-            print("Active features:", pr_names)
+            print("Selected features:", pr_names)
             fig, ax = plt.subplots(figsize=(6, 4))
             heatmap = sns.heatmap(mask, ax=ax)
             heatmap.set_xlabel('subnet index')

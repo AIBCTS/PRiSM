@@ -17,7 +17,7 @@ class PartialResponseCalculator:
         
         if method == 'lebesgue':
             if x_train is None:
-                raise ValueError("x_train must be provided for the Lebesgue method")
+                raise ValueError("the x_train: Optional[torch.Tensor] argument must be provided for the Lebesgue method.")
             self.calculate_baseline(x_train)
         
         self._check_model_compatibility(x_train)
@@ -81,7 +81,6 @@ class PartialResponseCalculator:
             univariate_responses[:, i] = torch.log(y_i / (1 - y_i)) - self.logit_y0
 
         bivariate_responses = []
-        bivariate_inputs = []
         for i in range(n_features):
             for j in range(i+1, n_features):
                 x_input = torch.zeros((n_samples, n_features), device=self.device)
@@ -93,11 +92,10 @@ class PartialResponseCalculator:
                                         - univariate_responses[:, i]
                                         - univariate_responses[:, j])
                 bivariate_responses.append(bivariate_response)
-                bivariate_inputs.append((i, j))
 
         bivariate_responses = torch.stack(bivariate_responses, dim=1)
 
-        return univariate_responses, bivariate_responses, bivariate_inputs
+        return univariate_responses, bivariate_responses
 
     def _calculate_lebesgue(self, x: torch.Tensor, batch_size: int = 1024,max_workers: int = 1, multi_gpus: bool = False) -> Tuple[torch.Tensor, torch.Tensor, List[Tuple[int, int]]]:
         n_features = x.shape[1]
@@ -110,7 +108,6 @@ class PartialResponseCalculator:
         univariate_responses = torch.zeros((n_samples, n_features), device=main_device)
         n_bivariate = n_features * (n_features - 1) // 2
         bivariate_responses = torch.zeros((n_samples, n_bivariate), device=main_device)
-        bivariate_inputs = list(combinations(range(n_features), 2))
 
         try:
             if multi_gpus:
@@ -202,9 +199,10 @@ class PartialResponseCalculator:
                     univariate_responses[batch_start:batch_end, i] = response
 
             # Process bivariate responses
+            # bivariate_inputs = list(combinations(range(n_features), 2))
             with ThreadPoolExecutor(max_workers=max_workers) as executor:
                 futures = []
-                for ij in bivariate_inputs:
+                for ij in combinations(range(n_features), 2):
                     for batch_start in range(0, n_samples, batch_size):
                         futures.append(executor.submit(process_bivariate_batch, ij, batch_start))
                 
@@ -225,7 +223,7 @@ class PartialResponseCalculator:
                 self.models.clear()
             x_on_gpus.clear()
 
-        return univariate_responses, bivariate_responses, bivariate_inputs
+        return univariate_responses, bivariate_responses
     
     @torch.no_grad()
     def calculate_subset(self, x: torch.Tensor, n_steps: int = 15, categorical_threshold: int = 15, subtract_univariate: bool = False) -> Tuple[List[torch.Tensor], List[torch.Tensor], List[Tuple[int, int]], List[torch.Tensor], List[torch.Tensor]]:
@@ -255,7 +253,6 @@ class PartialResponseCalculator:
             x_univariate.append(x_subset)
 
         bivariate_responses = []
-        bivariate_inputs = []
         x_bivariate = []
         for i in range(n_features):
             for j in range(i+1, n_features):
@@ -275,10 +272,9 @@ class PartialResponseCalculator:
                                            univariate_responses[j][torch.searchsorted(x_subset_j, x_ij[:, 1])])
                 
                 bivariate_responses.append(bivariate_response)
-                bivariate_inputs.append((i, j))
                 x_bivariate.append(x_ij)
 
-        return univariate_responses, bivariate_responses, bivariate_inputs, x_univariate, x_bivariate
+        return univariate_responses, bivariate_responses, x_univariate, x_bivariate
 
     def _calculate_lebesgue_subset(self, x: torch.Tensor, n_steps: int, categorical_threshold: int, subtract_univariate: bool) -> Tuple[List[torch.Tensor], List[torch.Tensor], List[Tuple[int, int]], List[torch.Tensor], List[torch.Tensor]]:
         n_features = x.shape[1]
@@ -299,7 +295,6 @@ class PartialResponseCalculator:
             x_univariate.append(x_subset)
 
         bivariate_responses = []
-        bivariate_inputs = []
         x_bivariate = []
         for i in range(n_features):
             for j in range(i+1, n_features):
@@ -321,10 +316,9 @@ class PartialResponseCalculator:
                                                   univariate_responses[j][torch.searchsorted(x_subset_j, val_j)])
 
                 bivariate_responses.append(bivariate_response)
-                bivariate_inputs.append((i, j))
                 x_bivariate.append(x_ij)
 
-        return univariate_responses, bivariate_responses, bivariate_inputs, x_univariate, x_bivariate
+        return univariate_responses, bivariate_responses, x_univariate, x_bivariate
 
 def get_variable_range(x: torch.Tensor, n_steps: int, categorical_threshold: int) -> torch.Tensor:
     if x.unique().shape[0] < categorical_threshold:
@@ -332,25 +326,21 @@ def get_variable_range(x: torch.Tensor, n_steps: int, categorical_threshold: int
     else:
         return torch.linspace(x.min(), x.max(), steps=n_steps, device=x.device)
 
-def partial_responses(x_train: torch.Tensor, x_test: torch.Tensor, model: Any, method: str = 'dirac', device: str = 'cpu', batch_size: int = 1024, max_workers = get_num_cpu_workers()) -> Tuple[torch.Tensor, torch.Tensor, List[Tuple[int, int]]]:
+def partial_responses(x: torch.Tensor, model: Any, x_train: Optional[torch.Tensor] = None, method: str = 'dirac', device: str = 'cpu', batch_size: int = 1024, max_workers = get_num_cpu_workers()) -> Tuple[torch.Tensor, torch.Tensor, List[Tuple[int, int]]]:
     with device_empty_cache(torch.device(device)):
-        pr = PartialResponseCalculator(model, method, device, input_dim=x_train.shape[1], x_train=x_train)
+        pr = PartialResponseCalculator(model, method, device, input_dim=x.shape[1], x_train=x_train)
         
-        univariate_train, bivariate_train, bivariate_inputs = pr.calculate(x_train, batch_size=batch_size, max_workers=max_workers)
-        univariate_test, bivariate_test, _ = pr.calculate(x_test, batch_size=batch_size, max_workers=max_workers)
+        univariate_train, bivariate_train= pr.calculate(x, batch_size=batch_size, max_workers=max_workers)
         
-        train_responses = torch.cat([univariate_train, bivariate_train], dim=1)
-        test_responses = torch.cat([univariate_test, bivariate_test], dim=1)
+        responses = torch.cat([univariate_train, bivariate_train], dim=1)
         
-        # Move results to CPU before returning
-        train_responses = train_responses.cpu()
-        test_responses = test_responses.cpu()
+        responses = responses.cpu()
 
-    return train_responses, test_responses, bivariate_inputs
+    return responses
 
 def partial_responses_subset(x: torch.Tensor, model: Any, method: str = 'dirac', device: str = 'cpu', n_steps: int = 15, categorical_threshold: int = 15, subtract_univariate: bool = True) -> Tuple[List[np.ndarray], List[np.ndarray], List[Tuple[int, int]], List[np.ndarray], List[np.ndarray]]:
     pr = PartialResponseCalculator(model, method, device, input_dim=x.shape[1], x_train=x)
-    univariate_responses, bivariate_responses, bivariate_inputs, x_univariate, x_bivariate = pr.calculate_subset(x, n_steps, categorical_threshold, subtract_univariate)
+    univariate_responses, bivariate_responses, x_univariate, x_bivariate = pr.calculate_subset(x, n_steps, categorical_threshold, subtract_univariate)
     
     # Convert PyTorch tensors to NumPy arrays
     univariate_responses_np = [response.cpu().numpy() for response in univariate_responses]
@@ -358,4 +348,4 @@ def partial_responses_subset(x: torch.Tensor, model: Any, method: str = 'dirac',
     x_univariate_np = [x.cpu().numpy() for x in x_univariate]
     x_bivariate_np = [x.cpu().numpy() for x in x_bivariate]
     
-    return univariate_responses_np, bivariate_responses_np, bivariate_inputs, x_univariate_np, x_bivariate_np
+    return univariate_responses_np, bivariate_responses_np, x_univariate_np, x_bivariate_np
