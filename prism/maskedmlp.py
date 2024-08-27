@@ -118,7 +118,7 @@ def train_model(x_tr, y_tr, x_ts, y_ts, model, criterion, optimizer, epochs, pat
             val_output = model(x_ts.to(device))
             val_loss = criterion(val_output, y_ts.to(device))
             print(
-                f'Epoch {epoch}, Training loss {loss.item()}, Validation loss {val_loss.item()}')
+                f'Epoch {epoch}, Training loss {loss.item()}, Test loss {val_loss.item()}')
 
             if val_loss < best_loss - tolerance:
                 best_loss = val_loss
@@ -140,7 +140,7 @@ def train_model(x_tr, y_tr, x_ts, y_ts, model, criterion, optimizer, epochs, pat
     return model
 
 
-def mlpmask_pytorch(x_tr: pd.DataFrame, y_tr: pd.DataFrame, x_ts: pd.DataFrame, y_ts: pd.DataFrame, n_hidden: int, mask: Optional[np.ndarray] = None, subnet_nodes: int = 1, lr: float = 0.001, weight_decay: float = 0.00001, tolerance: float = 0.001, patience: int = 10, iter: int = 10000, device: str = "cpu", seed: int = 257) -> Any:
+def train_maskedmlp(x_tr: pd.DataFrame, y_tr: pd.DataFrame, x_ts: pd.DataFrame, y_ts: pd.DataFrame, n_hidden: int, mask: Optional[np.ndarray] = None, subnet_nodes: int = 1, lr: float = 0.001, weight_decay: float = 0.00001, tolerance: float = 0.001, patience: int = 10, iter: int = 10000, device: str = "cpu", seed: int = 257) -> Any:
     torch.manual_seed(seed)
     device = torch.device(device)
 

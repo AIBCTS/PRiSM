@@ -26,7 +26,7 @@ For a full setup guide using Jupyter notebooks in VSCode, see
 - [Linux Setup](SETUP_LINUX.md)
 - [macOS Setup](SETUP_MACOS.md)
 
-Once Jupyter is setup with the virtual envrionment in VScode, see [notebooks/4.05-hpi-unos-full-dir-cpu.ipynb](notebooks/4.05-hpi-unos-full-dir-cpu.ipynb) for an example runthrough of the PRiSM method (_to be replaced with a proper tutorial notebook_). Alternatively, run it in Jupyter directly by with `jupyter notebook /notebooks/4.05-hpi-unos-full-dir-cpu.ipynb`.
+Once Jupyter is setup with the virtual envrionment in VScode, see [notebooks/4.00-hpi-german-cc-example.ipynb](notebooks/4.00-hpi-german-cc-example.ipynb) for an example runthrough of the PRiSM method (_to be replaced with a proper tutorial notebook_). Alternatively, run it in Jupyter directly by with `jupyter notebook /notebooks/4.00-hpi-german-cc-example.ipynb`.
 
 Documentation for the PRiSM codebase will eventually be hosted via github pages, but for now it can be viewed locally. See [docs/README.md](docs/README.md).
 
@@ -69,6 +69,38 @@ Documentation for the PRiSM codebase will eventually be hosted via github pages,
 make create_environment CUSTOM_PYTHON=/opt/python/3.11.7/bin/python3
 ```
 
+## PRiSM Method Overview
+
+Here is an overview of the key steps in PRiSM, as illustred in [notebooks/4.00-hpi-german-cc-example.ipynb](notebooks/4.00-hpi-german-cc-example.ipynb):
+
+```mermaid
+%% Set default styles
+%%{init: {'theme': 'base', 'themeVariables': { 'primaryTextColor': '#000000' }}}%%
+
+graph TD
+    A[Load and Preprocess Data] --> B[Train Initial Black Box Model]
+    B --> C[Evaluate Black Box Model]
+    C --> D[Calculate Partial Responses for Black Box]
+    D --> E[Perform LASSO on Partial Responses]
+    E --> F[Generate Initial Nomogram]
+    F --> G[Train Partial Response Network PRN]
+    G --> H[Evaluate PRN]
+    H --> I[Calculate Partial Responses for PRN]
+    I --> J[Perform LASSO on PRN Partial Responses]
+    J --> K[Evaluate PRN-LASSO Model]
+    K --> L[Generate Final Nomogram]
+    
+    classDef dataPrepClass fill:#d8b5ff,stroke:#333,stroke-width:2px
+    classDef modelTrainClass fill:#9cc3ff,stroke:#333,stroke-width:2px
+    classDef partialLassoClass fill:#9dff9d,stroke:#333,stroke-width:2px
+    classDef evalVisuClass fill:#ffcf9d,stroke:#333,stroke-width:2px
+    
+    class A dataPrepClass
+    class B,G modelTrainClass
+    class D,E,I,J partialLassoClass
+    class C,F,H,K,L evalVisuClass
+```
+
 ## Project Organization
 
 ```txt
@@ -96,13 +128,17 @@ make create_environment CUSTOM_PYTHON=/opt/python/3.11.7/bin/python3
 ├── setup.cfg          <- Configuration file for flake8
 │
 └── prism              <- Source code for use in this project
-│   ├── __init__.py    <- Makes prism a Python module
-│   ├── config.py      <- Contains definitions like DATA_DIR
-│   ├── maskedmlp.py   <- Masked MLP model definition and related functions
-│   ├── PRiSM_functions.py  <- Other functions related to the PRiSM method
-│   ├── prlasso.py     <- Partial response LASSO
-│   ├── prnomogram.py  <- Partial response nomogram plotting functions
-│   └── save_models.py <- Helper functions for saving model parameters, models, and metrics
+    ├── __init__.py    <- Makes prism a Python module
+    ├── config.py      <- Contains definitions like DATA_DIR
+    ├── device_tools.py <- Functions for managing compute devices and memory
+    ├── legacy.py      <- Contains legacy functions for model evaluation
+    ├── lasso.py       <- Implementation of LASSO regularization for feature selection
+    ├── lasso_results.py <- Class for managing and analyzing LASSO results
+    ├── maskedmlp.py   <- Masked MLP model definition and related functions
+    ├── nomogram.py    <- Functions for generating nomograms from model results
+    ├── partial_responses.py <- Implements partial response calculations for model interpretation
+    ├── preprocessing.py <- Functions for data preprocessing
+    └── save_models.py <- Helper functions for saving model parameters, models, and metrics
 ```
 
 For notebook numbering guidance, see the [conventions here](https://cookiecutter-data-science.drivendata.org/using-the-template/#open-a-notebook).

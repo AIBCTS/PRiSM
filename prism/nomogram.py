@@ -293,7 +293,7 @@ def nomogram(lasso_results: LassoResultsManager, x: torch.Tensor,
     fig_main = nomogram_generator.generate_main_nomogram(univariate_responses, x_univariate, bivariate_responses, x_bivariate)
     if fig_main:
         plt.figure(fig_main.number)
-        plt.suptitle("Nomogram of univariate and mixed bivariate partial responses", y=1.02)
+        plt.suptitle(f"Nomogram of univariate and mixed bivariate partial responses ({method.title()})", y=1.01)
         plt.tight_layout()
         plt.show()
 
@@ -301,7 +301,7 @@ def nomogram(lasso_results: LassoResultsManager, x: torch.Tensor,
     fig_non_mixed = nomogram_generator.generate_non_mixed_bivariate_nomogram(bivariate_responses, x_bivariate)
     if fig_non_mixed:
         plt.figure(fig_non_mixed.number)
-        plt.suptitle("Nomogram of non-mixed bivariate partial responses", y=1.02)
+        plt.suptitle(f"Nomogram of non-mixed bivariate partial responses ({method.title()})", y=1.01)
         plt.tight_layout()
         plt.show()
 

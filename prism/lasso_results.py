@@ -44,6 +44,8 @@ class LassoResultsManager:
     def get_selected_model(self) -> LogisticRegression:
         if self.selected_lambda_index is None:
             raise ValueError("No lambda selected")
+        else:
+            print(f"Logistic regression model for Lambda index {self.selected_lambda_index} ({self.lambdas[self.selected_lambda_index]:.4g}) selected.")
         return self.models[self.selected_lambda_index]
 
     def get_selected_feature_indicies(self, threshold: float = 0.1) -> List[int]:
@@ -193,7 +195,7 @@ class LassoResultsManager:
             print("Selected features:", pr_names)
             fig, ax = plt.subplots(figsize=(6, 4))
             heatmap = sns.heatmap(mask, ax=ax)
-            heatmap.set_xlabel('subnet index')
+            heatmap.set_xlabel('subnet node index')
             heatmap.set_ylabel('input features')
             heatmap.set_title('input mask')
             ax.set_yticklabels(self.univariate_feature_names, rotation=0)
