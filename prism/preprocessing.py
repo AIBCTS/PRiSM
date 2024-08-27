@@ -57,7 +57,7 @@ def plot_feature_histograms(X, feature_stats, feature_names=None, figsize=(20, 2
     
     Parameters:
     X (pd.DataFrame): The dataset containing the features
-    feature_stats (pd.DataFrame): DataFrame containing feature statistics including 'Is Categorical'
+    feature_stats (pd.DataFrame): DataFrame containing feature statistics including 'Is Categorical' 
     feature_names (list): Optional list of feature names to use as labels
     figsize (tuple): Figure size (width, height) in inches
     """
