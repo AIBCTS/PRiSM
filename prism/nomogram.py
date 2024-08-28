@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 import torch
 import numpy as np
-from typing import Any, List, Tuple
+from typing import Any, List, Tuple, Optional
 from prism.lasso_results import LassoResultsManager
 from prism.partial_responses import partial_responses_subset
 
@@ -272,7 +272,8 @@ def nomogram(lasso_results: LassoResultsManager, x: torch.Tensor,
              n_steps: int = 15, sd_scale: float = 2, 
              method: str = "dirac", device: str = "cpu", 
              categorical_threshold: int = 15,
-             subtract_univariate: bool = True) -> Tuple[List[np.ndarray], List[np.ndarray], List[np.ndarray], List[np.ndarray]]:
+             subtract_univariate: bool = True, show_fig: bool = True,
+             return_fig: bool = False) -> Tuple[List[np.ndarray], List[np.ndarray], List[np.ndarray], List[np.ndarray]]:
     
 
     # Calculate subset of partial responses
@@ -295,7 +296,10 @@ def nomogram(lasso_results: LassoResultsManager, x: torch.Tensor,
         plt.figure(fig_main.number)
         plt.suptitle(f"Nomogram of univariate and mixed bivariate partial responses ({method.title()})", y=1.01)
         plt.tight_layout()
-        plt.show()
+        if show_fig:
+            plt.show()
+        # else:
+        #     plt.close(fig_main)
 
     # Generate separate plot for non-mixed bivariate responses
     fig_non_mixed = nomogram_generator.generate_non_mixed_bivariate_nomogram(bivariate_responses, x_bivariate)
@@ -303,7 +307,91 @@ def nomogram(lasso_results: LassoResultsManager, x: torch.Tensor,
         plt.figure(fig_non_mixed.number)
         plt.suptitle(f"Nomogram of non-mixed bivariate partial responses ({method.title()})", y=1.01)
         plt.tight_layout()
-        plt.show()
+        if show_fig:
+            plt.show()
+        # else:
+        #     plt.close(fig_non_mixed)
 
-    # Return responses for potential future use
-    return univariate_responses, bivariate_responses, x_univariate, x_bivariate
+    # Return responses and optionally return figures
+    if return_fig:
+        return univariate_responses, bivariate_responses, x_univariate, x_bivariate, fig_main, fig_non_mixed
+    else:
+        return univariate_responses, bivariate_responses, x_univariate, x_bivariate
+
+def align_and_plot(fig1, fig2, title1, title2, max_width, max_height):
+    # Get the image data from the figures
+    img1 = np.array(fig1.canvas.renderer.buffer_rgba())
+    img2 = np.array(fig2.canvas.renderer.buffer_rgba())
+    
+    # Get the heights and widths of both images
+    h1, w1, _ = img1.shape
+    h2, w2, _ = img2.shape
+    
+    # Calculate the aspect ratios
+    aspect1 = h1 / w1
+    aspect2 = h2 / w2
+    
+    # Calculate the optimal figure size
+    width = min(max_width, (w1 + w2) / 100)
+    height = min(max_height, max(h1 / 100, h2 / 100))
+    
+    # Create a new figure
+    fig = plt.figure(figsize=(width, height))
+    
+    # Calculate the width of each subplot (leaving some space for padding)
+    subplot_width = 0.48
+    
+    # Calculate the heights based on the aspect ratios and subplot width
+    height1 = subplot_width * width * aspect1 / height
+    height2 = subplot_width * width * aspect2 / height
+    
+    # Add the subplots, aligning them at the top
+    ax1 = fig.add_axes([0.01, 1 - height1, subplot_width, height1])
+    ax2 = fig.add_axes([0.51, 1 - height2, subplot_width, height2])
+    
+    # Plot the images
+    ax1.imshow(img1)
+    ax2.imshow(img2)
+    
+    # Remove axes
+    ax1.axis('off')
+    ax2.axis('off')
+    
+    # Set titles
+    ax1.set_title(title1)
+    ax2.set_title(title2)
+    
+    # Show the plot
+    plt.show()
+
+def display_nomograms_side_by_side(fig_main1: Optional[plt.Figure], fig_non_mixed1: Optional[plt.Figure], 
+                                   fig_main2: Optional[plt.Figure], fig_non_mixed2: Optional[plt.Figure],
+                                   titles: List[str] = ["MLP", "PRN"],
+                                   max_width: float = 20,
+                                   max_height: float = 25):
+    """
+    Display nomograms side by side for comparison, with equal width, top-aligned, and preserved aspect ratios.
+    
+    Parameters:
+    fig_main1: Main nomogram figure for model 1
+    fig_non_mixed1: Non-mixed bivariate nomogram figure for model 1
+    fig_main2: Main nomogram figure for model 2
+    fig_non_mixed2: Non-mixed bivariate nomogram figure for model 2
+    titles: List of titles for the two models being compared
+    max_width: Maximum width of the figure in inches
+    max_height: Maximum height of the figure in inches
+    """
+    
+    # Display main nomograms side by side
+    if fig_main1 and fig_main2:
+        align_and_plot(fig_main1, fig_main2, 
+                       f"{titles[0]}", 
+                       f"{titles[1]}",
+                       max_width, max_height)
+    
+    # Display non-mixed bivariate nomograms side by side
+    if fig_non_mixed1 and fig_non_mixed2:
+        align_and_plot(fig_non_mixed1, fig_non_mixed2, 
+                       f"{titles[0]}", 
+                       f"{titles[1]}",
+                       max_width, max_height)
