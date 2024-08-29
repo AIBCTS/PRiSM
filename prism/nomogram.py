@@ -112,7 +112,7 @@ class NomogramGenerator:
         ax.scatter(response, np.full_like(response, y_value), marker="|", color=line_color)
         for i, value in enumerate(denormalized_values):
             if response[i] != 0:
-                ax.annotate(f"{value:.2f}", (response[i], y_value), 
+                ax.annotate(f"{value:.3g}", (response[i], y_value), 
                             xytext=(response[i], y_value + 0.003),
                             ha='center', va='bottom')
         ax.set_yticks([])
@@ -155,12 +155,12 @@ class NomogramGenerator:
             else:
                 x = response[x2 == cat_val]
                 y = cont_values[x2 == cat_val]
-            line, = ax.plot(x, y, label=f"{self.denormalize(cat_val, cat_feature):.2f}")
+            line, = ax.plot(x, y, label=f"{self.denormalize(cat_val, cat_feature):.4g}")
             line_color = line.get_color()
 
         # Set y-ticks and labels
         ax.set_yticks(y_ticks)
-        y_labels = [f"{self.denormalize(y, cont_feature):.2f}" for y in y_ticks]
+        y_labels = [f"{self.denormalize(y, cont_feature):.4g}" for y in y_ticks]
         ax.set_yticklabels(y_labels)
 
         # Add scatter points and annotations
@@ -240,8 +240,8 @@ class NomogramGenerator:
         im = ax.imshow(response_matrix.T, cmap='viridis', aspect='auto', origin='lower')
         ax.set_xticks(range(len(np.unique(x1))))
         ax.set_yticks(range(len(np.unique(x2))))
-        ax.set_xticklabels([f"{val:.2f}" for val in self.denormalize(np.unique(x1), feature1)])
-        ax.set_yticklabels([f"{val:.2f}" for val in self.denormalize(np.unique(x2), feature2)])
+        ax.set_xticklabels([f"{val:.2g}" for val in self.denormalize(np.unique(x1), feature1)])
+        ax.set_yticklabels([f"{val:.2g}" for val in self.denormalize(np.unique(x2), feature2)])
         ax.set_xlabel(self.all_feature_names[feature1])
         ax.set_ylabel(self.all_feature_names[feature2])
         plt.colorbar(im, ax=ax, label='Log Odds Ratio')
