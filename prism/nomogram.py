@@ -7,7 +7,7 @@ from prism.lasso_results import LassoResultsManager
 from prism.partial_responses import partial_responses_subset
 
 class NomogramGenerator:
-    def __init__(self, lasso_results: LassoResultsManager, x: np.ndarray, x0_median: np.ndarray, x0_std: np.ndarray, n_steps: int = 15, categorical_threshold: int = 15, sd_scale: float = 2):
+    def __init__(self, lasso_results: LassoResultsManager, x: np.ndarray, x0_median: np.ndarray, x0_std: np.ndarray, n_steps: int = 15, categorical_threshold: int = 15, sd_scale: float = 2, use_odds_ratio: bool = False):
         self.lasso_results = lasso_results
         self.x = x
         self.x0_median = x0_median
@@ -17,9 +17,27 @@ class NomogramGenerator:
         self.categorical_threshold = categorical_threshold
         self.sd_scale = sd_scale
         self.all_feature_names = lasso_results.all_feature_names
+        self.use_odds_ratio = use_odds_ratio
 
     def denormalize(self, x: np.ndarray, feature: int) -> np.ndarray:
         return x * (self.x0_std[feature] * self.sd_scale) + self.x0_median[feature]
+
+    def _get_log_tick_locations(self, min_x, max_x):
+        # Calculate the orders of magnitude for min and max
+        min_order = np.floor(np.log10(min_x))
+        max_order = np.ceil(np.log10(max_x))
+        
+        # Generate tick locations
+        tick_locations = [10**i for i in range(int(min_order), int(max_order)+1)]
+        
+        # Add intermediate ticks if range is small
+        if max_order - min_order <= 2:
+            tick_locations += [x * 5 for x in tick_locations[:-1]]
+        
+        # Filter tick locations to be within the data range
+        tick_locations = [x for x in tick_locations if min_x <= x <= max_x]
+        
+        return sorted(tick_locations)
 
     def generate_main_nomogram(self, univariate_responses: List[np.ndarray], x_univariate: List[np.ndarray], 
                             bivariate_responses: List[np.ndarray], x_bivariate: List[np.ndarray]):
@@ -66,20 +84,42 @@ class NomogramGenerator:
         if all_x_values:
             min_x = min(all_x_values)
             max_x = max(all_x_values)
-            x_padding_ratio = 0.05
-            for ax in nomo.axes:
-                ax.set_xlim(min_x-(x_padding_ratio*(max_x-min_x)),
-                            max_x+(x_padding_ratio*(max_x-min_x)))
-
+            if self.use_odds_ratio:
+                x_padding_ratio = 0.1  # pad for log scale
+                min_x = min_x / (1 + x_padding_ratio)
+                max_x = max_x * (1 + x_padding_ratio)
+                
+                # Get appropriate tick locations
+                tick_locations = self._get_log_tick_locations(min_x, max_x)
+                
+                for ax in nomo.axes:
+                    ax.set_xlim(min_x, max_x)
+                    ax.set_xscale('log')
+                    ax.set_xticks(tick_locations)
+                    ax.set_xticklabels([f"{x:.2g}" for x in tick_locations])
+            else:
+                x_padding_ratio = 0.05
+                min_x = min_x - (x_padding_ratio * (max_x - min_x))
+                max_x = max_x + (x_padding_ratio * (max_x - min_x))
+                
+                for ax in nomo.axes:
+                    ax.set_xlim(min_x, max_x)
+                    
         # Adjust the x-axis presentation
         for i, ax in enumerate(nomo.axes):
-            ax.axvline(0, color="black", alpha=0.5)
+            if self.use_odds_ratio:
+                ax.axvline(1, color="black", alpha=0.5)
+            else:
+                ax.axvline(0, color="black", alpha=0.5)
             if i == 0:
                 ax.xaxis.tick_top()
                 ax.xaxis.set_label_position('top')
-                ax.set_xlabel("Log Odds Ratio")
+                ax.set_xlabel("Odds Ratio" if self.use_odds_ratio else "Log Odds Ratio")
+            elif i == num_plots-1:
+                ax.xaxis.tick_bottom()
+                ax.set_xlabel("Odds Ratio" if self.use_odds_ratio else "Log Odds Ratio")
             else:
-                ax.tick_params(axis='x', which='both', bottom=True, top=False, labelbottom=False)
+                ax.tick_params(axis='x', which='both', bottom=True, top=True, labelbottom=False)
                 ax.set_xlabel('')
                 
         # Adjust the title positioning
@@ -99,7 +139,10 @@ class NomogramGenerator:
         else:
             self._plot_continuous_response(ax, feature, response, x_values)
 
-        ax.axvline(0, color="black", alpha=0.5)
+        if self.use_odds_ratio:
+            ax.axvline(1, color="black", alpha=0.5)
+        else:
+            ax.axvline(0, color="black", alpha=0.5)
         ax.set_ylabel(self.all_feature_names[feature], rotation=90, loc="center", labelpad=5)
         ax.yaxis.tick_right()
 
@@ -111,8 +154,8 @@ class NomogramGenerator:
 
         ax.scatter(response, np.full_like(response, y_value), marker="|", color=line_color)
         for i, value in enumerate(denormalized_values):
-            if response[i] != 0:
-                ax.annotate(f"{value:.3g}", (response[i], y_value), 
+            if (self.use_odds_ratio and response[i] != 1) or (not self.use_odds_ratio and response[i] != 0):
+                ax.annotate(f"{value:.2g}", (response[i], y_value), 
                             xytext=(response[i], y_value + 0.003),
                             ha='center', va='bottom')
         ax.set_yticks([])
@@ -216,6 +259,7 @@ class NomogramGenerator:
             feature1, feature2 = self.lasso_results.bivariate_inputs[biv_index]
             response = bivariate_responses[biv_index]
             x_values = x_bivariate[biv_index]
+            
             self._plot_bivariate_response(axes[i], response, x_values, (feature1, feature2))
 
         plt.tight_layout()
@@ -244,14 +288,14 @@ class NomogramGenerator:
         ax.set_yticklabels([f"{val:.2g}" for val in self.denormalize(np.unique(x2), feature2)])
         ax.set_xlabel(self.all_feature_names[feature1])
         ax.set_ylabel(self.all_feature_names[feature2])
-        plt.colorbar(im, ax=ax, label='Log Odds Ratio')
+        plt.colorbar(im, ax=ax, label='Odds Ratio' if self.use_odds_ratio else 'Log Odds Ratio')
 
         # Add text annotations
         for i in range(len(np.unique(x1))):
             for j in range(len(np.unique(x2))):
                 text = ax.text(i, j, f"{response_matrix[i, j]:.2f}",
-                               ha="center", va="center", color="white",
-                               bbox=dict(boxstyle="round", facecolor="black", edgecolor="none", alpha=0.5))
+                            ha="center", va="center", color="white",
+                            bbox=dict(boxstyle="round", facecolor="black", edgecolor="none", alpha=0.5))
 
     def _plot_continuous_continuous(self, ax, response, x1, x2, feature1, feature2):
         # Create 2D grids for plotting
@@ -265,7 +309,7 @@ class NomogramGenerator:
         
         ax.set_xlabel(self.all_feature_names[feature1])
         ax.set_ylabel(self.all_feature_names[feature2])
-        plt.colorbar(contour_heatmap, ax=ax, label='Log Odds Ratio')
+        plt.colorbar(contour_heatmap, ax=ax, label='Odds Ratio' if self.use_odds_ratio else 'Log Odds Ratio')
 
 def nomogram(lasso_results: LassoResultsManager, x: torch.Tensor, 
              x0_median: np.ndarray, x0_std: np.ndarray, model: Any, 
@@ -273,7 +317,7 @@ def nomogram(lasso_results: LassoResultsManager, x: torch.Tensor,
              method: str = "dirac", device: str = "cpu", 
              categorical_threshold: int = 15,
              subtract_univariate: bool = True, show_fig: bool = True,
-             return_fig: bool = False) -> Tuple[List[np.ndarray], List[np.ndarray], List[np.ndarray], List[np.ndarray]]:
+             return_fig: bool = False, use_odds_ratio: bool = False) -> Tuple[List[np.ndarray], List[np.ndarray], List[np.ndarray], List[np.ndarray]]:
     
 
     # Calculate subset of partial responses
@@ -283,34 +327,35 @@ def nomogram(lasso_results: LassoResultsManager, x: torch.Tensor,
         subtract_univariate=subtract_univariate
     )
 
+    # Convert to odds ratio if necessary
+    if use_odds_ratio:
+        univariate_responses = [np.exp(resp) for resp in univariate_responses]
+        bivariate_responses = [np.exp(resp) for resp in bivariate_responses]
+
     # Ensure inputs are numpy arrays
     x = x.cpu().numpy()
     x0_median = np.asarray(x0_median)
     x0_std = np.asarray(x0_std)
     
     # Generate plots
-    nomogram_generator = NomogramGenerator(lasso_results, x, x0_median, x0_std, n_steps, categorical_threshold, sd_scale)
+    nomogram_generator = NomogramGenerator(lasso_results, x, x0_median, x0_std, n_steps, categorical_threshold, sd_scale, use_odds_ratio)
     
     fig_main = nomogram_generator.generate_main_nomogram(univariate_responses, x_univariate, bivariate_responses, x_bivariate)
     if fig_main:
         plt.figure(fig_main.number)
-        plt.suptitle(f"Nomogram of univariate and mixed bivariate partial responses ({method.title()})", y=1.01)
+        plt.suptitle(f"Nomogram of univariate and mixed bivariate partial responses ({method.title()})", y=1.0)
         plt.tight_layout()
         if show_fig:
             plt.show()
-        # else:
-        #     plt.close(fig_main)
 
     # Generate separate plot for non-mixed bivariate responses
     fig_non_mixed = nomogram_generator.generate_non_mixed_bivariate_nomogram(bivariate_responses, x_bivariate)
     if fig_non_mixed:
         plt.figure(fig_non_mixed.number)
-        plt.suptitle(f"Nomogram of non-mixed bivariate partial responses ({method.title()})", y=1.01)
+        plt.suptitle(f"Nomogram of non-mixed bivariate partial responses ({method.title()})", y=1.0)
         plt.tight_layout()
         if show_fig:
             plt.show()
-        # else:
-        #     plt.close(fig_non_mixed)
 
     # Return responses and optionally return figures
     if return_fig:

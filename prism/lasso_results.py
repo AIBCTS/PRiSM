@@ -90,7 +90,7 @@ class LassoResultsManager:
 
         plt.figure(figsize=(12, 6))
         plt.bar(features, importance)
-        plt.xticks(rotation=90)
+        plt.xticks(rotation=45, ha='right')
         plt.xlabel('Features')
         plt.ylabel('Absolute Coefficient Value')
         plt.title('Feature Importance')
