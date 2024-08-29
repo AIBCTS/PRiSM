@@ -22,23 +22,6 @@ class NomogramGenerator:
     def denormalize(self, x: np.ndarray, feature: int) -> np.ndarray:
         return x * (self.x0_std[feature] * self.sd_scale) + self.x0_median[feature]
 
-    def _get_log_tick_locations(self, min_x, max_x):
-        # Calculate the orders of magnitude for min and max
-        min_order = np.floor(np.log10(min_x))
-        max_order = np.ceil(np.log10(max_x))
-        
-        # Generate tick locations
-        tick_locations = [10**i for i in range(int(min_order), int(max_order)+1)]
-        
-        # Add intermediate ticks if range is small
-        if max_order - min_order <= 2:
-            tick_locations += [x * 5 for x in tick_locations[:-1]]
-        
-        # Filter tick locations to be within the data range
-        tick_locations = [x for x in tick_locations if min_x <= x <= max_x]
-        
-        return sorted(tick_locations)
-
     def generate_main_nomogram(self, univariate_responses: List[np.ndarray], x_univariate: List[np.ndarray], 
                             bivariate_responses: List[np.ndarray], x_bivariate: List[np.ndarray]):
         univariate_features = self.lasso_results.get_selected_univariate_indices()
@@ -108,9 +91,9 @@ class NomogramGenerator:
         # Adjust the x-axis presentation
         for i, ax in enumerate(nomo.axes):
             if self.use_odds_ratio:
-                ax.axvline(1, color="black", alpha=0.5)
+                ax.axvline(1, color="black", alpha=0.3)
             else:
-                ax.axvline(0, color="black", alpha=0.5)
+                ax.axvline(0, color="black", alpha=0.3)
             if i == 0:
                 ax.xaxis.tick_top()
                 ax.xaxis.set_label_position('top')
@@ -131,6 +114,23 @@ class NomogramGenerator:
         nomo.subplots_adjust(top=fig_top, hspace=0)
 
         return nomo
+    
+    def _get_log_tick_locations(self, min_x, max_x):
+        # Calculate the orders of magnitude for min and max
+        min_order = np.floor(np.log10(min_x))
+        max_order = np.ceil(np.log10(max_x))
+        
+        # Generate tick locations
+        tick_locations = [10**i for i in range(int(min_order), int(max_order)+1)]
+        
+        # Add intermediate ticks if range is small
+        if max_order - min_order <= 2:
+            tick_locations += [x * 5 for x in tick_locations[:-1]]
+        
+        # Filter tick locations to be within the data range
+        tick_locations = [x for x in tick_locations if min_x <= x <= max_x]
+        
+        return sorted(tick_locations)
 
     def _plot_univariate_response(self, ax, feature, response, x_values):
         is_categorical = len(np.unique(self.x[:, feature])) < self.categorical_threshold
@@ -139,10 +139,6 @@ class NomogramGenerator:
         else:
             self._plot_continuous_response(ax, feature, response, x_values)
 
-        if self.use_odds_ratio:
-            ax.axvline(1, color="black", alpha=0.5)
-        else:
-            ax.axvline(0, color="black", alpha=0.5)
         ax.set_ylabel(self.all_feature_names[feature], rotation=90, loc="center", labelpad=5)
         ax.yaxis.tick_right()
 
@@ -154,10 +150,11 @@ class NomogramGenerator:
 
         ax.scatter(response, np.full_like(response, y_value), marker="|", color=line_color)
         for i, value in enumerate(denormalized_values):
-            if (self.use_odds_ratio and response[i] != 1) or (not self.use_odds_ratio and response[i] != 0):
-                ax.annotate(f"{value:.2g}", (response[i], y_value), 
-                            xytext=(response[i], y_value + 0.003),
-                            ha='center', va='bottom')
+            # if (self.use_odds_ratio and response[i] != 1) or (not self.use_odds_ratio and response[i] != 0):
+            ax.annotate(f"{value:.2g}", (response[i], y_value), 
+                        xytext=(response[i], y_value + 0.003),
+                        ha='center', va='bottom')
+                
         ax.set_yticks([])
 
     def _plot_continuous_response(self, ax, feature, response, x_values):
@@ -226,7 +223,6 @@ class NomogramGenerator:
                                     xytext=(x_value + x_offset, y_tick + y_offset),
                                     ha='right', va='center', color='black')
 
-        ax.axvline(0, color="black", alpha=0.5)
         ax.set_xlabel("Log Odds Ratio")
         ax.set_ylabel(self.all_feature_names[cont_feature])
         

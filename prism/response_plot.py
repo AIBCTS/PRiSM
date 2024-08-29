@@ -6,12 +6,16 @@ from prism.lasso_results import LassoResultsManager
 from prism.partial_responses import partial_responses_subset
 from prism.nomogram import NomogramGenerator
 
-def plot_continuous_response_with_histogram(ax, response, x_values, feature_name, nomogram_generator, feature_index):
+def plot_continuous_response_with_histogram(ax, response, x_values, feature_name, nomogram_generator, feature_index, use_odds_ratio):
     """
     Plot continuous partial response with histogram using denormalized values.
     """
     # Denormalize x_values
     x_denormalized = nomogram_generator.denormalize(x_values, feature_index)
+    
+    # Convert to odds ratio if necessary
+    if use_odds_ratio:
+        response = np.exp(response)
     
     # Plot partial response
     ax.plot(x_denormalized, response, label='Partial Response')
@@ -29,13 +33,19 @@ def plot_continuous_response_with_histogram(ax, response, x_values, feature_name
     ax.set_xticklabels([f"{val:.2f}" for val in x_ticks])
     
     ax.set_xlabel(feature_name)
-    ax.set_ylabel('Log Odds Ratio')
+    ax.set_ylabel('Odds Ratio' if use_odds_ratio else 'Log Odds Ratio')
 
     # Adjust y-axis for density
     ylim = hist_ax.get_ylim()
     hist_ax.set_ylim(0, ylim[1] * 1.2)
 
-def plot_mixed_response_with_histogram(ax, response, x_values, feature_names, nomogram_generator, feature_indices, categorical_feature):
+    # Add reference line
+    if use_odds_ratio:
+        ax.axhline(y=1, color='k', linewidth=1, alpha=0.8)
+    else:
+        ax.axhline(y=0, color='k', linewidth=1, alpha=0.8)
+
+def plot_mixed_response_with_histogram(ax, response, x_values, feature_names, nomogram_generator, feature_indices, categorical_feature, use_odds_ratio):
     """
     Plot mixed (one categorical, one continuous) partial response with histogram using denormalized values.
     """
@@ -47,6 +57,10 @@ def plot_mixed_response_with_histogram(ax, response, x_values, feature_names, no
         nomogram_generator.denormalize(x_values[:, 0], feature_indices[0]),
         nomogram_generator.denormalize(x_values[:, 1], feature_indices[1])
     ])
+    
+    # Convert to odds ratio if necessary
+    if use_odds_ratio:
+        response = np.exp(response)
     
     cat_values = np.unique(x_denormalized[:, categorical_feature])
     cont_values = x_denormalized[:, cont_feature]
@@ -69,27 +83,37 @@ def plot_mixed_response_with_histogram(ax, response, x_values, feature_names, no
     ax.set_xticklabels([f"{val:.2f}" for val in x_ticks])
     
     ax.set_xlabel(feature_names[cont_feature])
-    ax.set_ylabel('Log Odds Ratio')
+    ax.set_ylabel('Odds Ratio' if use_odds_ratio else 'Log Odds Ratio')
     ax.legend()
 
     # Adjust y-axis for density
     ylim = hist_ax.get_ylim()
     hist_ax.set_ylim(0, ylim[1] * 1.2)
 
-def plot_categorical_response_with_histogram(ax, response, x_values, feature_name, nomogram_generator, feature_index):
+    # Add reference line
+    if use_odds_ratio:
+        ax.axhline(y=1, color='k', linewidth=1, alpha=0.8)
+    else:
+        ax.axhline(y=0, color='k', linewidth=1, alpha=0.8)
+
+def plot_categorical_response_with_histogram(ax, response, x_values, feature_name, nomogram_generator, feature_index, use_odds_ratio):
     """
     Plot categorical partial response with histogram.
     """
     # Denormalize x_values
     x_denormalized = nomogram_generator.denormalize(x_values, feature_index)
     
+    # Convert to odds ratio if necessary
+    if use_odds_ratio:
+        response = np.exp(response)
+    
     # Get unique categories and their counts from the full dataset
     original_data = nomogram_generator.denormalize(nomogram_generator.x[:, feature_index], feature_index)
     categories, counts = np.unique(original_data, return_counts=True)
     
-    # Create scatter plot for log odds ratio
+    # Create scatter plot for log odds ratio or odds ratio
     scatter = ax.scatter(x_denormalized, response, s=50, zorder=3, marker='_', linewidth=3)
-    ax.set_ylabel('Log Odds Ratio')
+    ax.set_ylabel('Odds Ratio' if use_odds_ratio else 'Log Odds Ratio')
 
     # Create histogram
     hist_ax = ax.twinx()
@@ -107,6 +131,12 @@ def plot_categorical_response_with_histogram(ax, response, x_values, feature_nam
     ylim = hist_ax.get_ylim()
     hist_ax.set_ylim(0, ylim[1] * 1.2)
 
+    # Add reference line
+    if use_odds_ratio:
+        ax.axhline(y=1, color='k', linewidth=1, alpha=0.8)
+    else:
+        ax.axhline(y=0, color='k', linewidth=1, alpha=0.8)
+
 def plot_partial_responses(lasso_results: LassoResultsManager, 
                            x: torch.Tensor, 
                            x0_median: np.ndarray, 
@@ -120,7 +150,8 @@ def plot_partial_responses(lasso_results: LassoResultsManager,
                            subtract_univariate: bool = True, 
                            figsize: Tuple[int, int] = (15, 20),
                            show_fig: bool = True,
-                           return_fig: bool = False) -> Optional[plt.Figure]:
+                           return_fig: bool = False,
+                           use_odds_ratio: bool = False) -> Optional[plt.Figure]:
     """
     Generate a grid of subplots showing partial responses for the selected lambda.
     """
@@ -130,7 +161,7 @@ def plot_partial_responses(lasso_results: LassoResultsManager,
         subtract_univariate=subtract_univariate
     )
     
-    nomogram_generator = NomogramGenerator(lasso_results, x.cpu().numpy(), x0_median, x0_std, n_steps, categorical_threshold, sd_scale)
+    nomogram_generator = NomogramGenerator(lasso_results, x.cpu().numpy(), x0_median, x0_std, n_steps, categorical_threshold, sd_scale, use_odds_ratio)
     
     selected_univariate_indices = lasso_results.get_selected_univariate_indices()
     selected_bivariate_indices = lasso_results.get_selected_bivariate_indices()
@@ -152,9 +183,9 @@ def plot_partial_responses(lasso_results: LassoResultsManager,
         response = univariate_responses[i]
         x_values = x_univariate[i]
         if len(np.unique(x_values)) < categorical_threshold:
-            plot_categorical_response_with_histogram(ax, response, x_values, feature_name, nomogram_generator, i)
+            plot_categorical_response_with_histogram(ax, response, x_values, feature_name, nomogram_generator, i, use_odds_ratio)
         else:
-            plot_continuous_response_with_histogram(ax, response, x_values, feature_name, nomogram_generator, i)
+            plot_continuous_response_with_histogram(ax, response, x_values, feature_name, nomogram_generator, i, use_odds_ratio)
         plot_index += 1
     
     # Plot bivariate responses
@@ -170,7 +201,7 @@ def plot_partial_responses(lasso_results: LassoResultsManager,
         if is_categorical1 != is_categorical2:  # Mixed (one categorical, one continuous)
             categorical_feature = 0 if is_categorical1 else 1
             plot_mixed_response_with_histogram(ax, response, x_values, (feature1, feature2), 
-                                               nomogram_generator, (i, j), categorical_feature)
+                                               nomogram_generator, (i, j), categorical_feature, use_odds_ratio)
         else:  # Non-mixed (both categorical or both continuous)
             nomogram_generator._plot_bivariate_response(ax, response, x_values, (i, j))
 
