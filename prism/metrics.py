@@ -7,6 +7,11 @@ import matplotlib.pyplot as plt
 from typing import Dict, Any, Union
 import warnings
 
+def to_numpy(tensor_or_array):
+    if isinstance(tensor_or_array, torch.Tensor):
+        return tensor_or_array.cpu().numpy()
+    return np.asarray(tensor_or_array)
+
 def evaluate_model_performance(
     y_true: Union[np.ndarray, torch.Tensor],
     y_pred: Union[np.ndarray, torch.Tensor],
@@ -47,10 +52,10 @@ def evaluate_model_performance(
     Dict[str, Any]
         Dictionary containing performance metrics and figures.
     """
-    # Convert inputs to NumPy arrays if they are PyTorch tensors
-    y_true = y_true.numpy() if isinstance(y_true, torch.Tensor) else y_true
-    y_pred = y_pred.numpy() if isinstance(y_pred, torch.Tensor) else y_pred
-    y_train = y_train.numpy() if isinstance(y_train, torch.Tensor) else y_train
+
+    y_true = to_numpy(y_true)
+    y_pred = to_numpy(y_pred)
+    y_train = to_numpy(y_train) if y_train is not None else None
     
     if y_train is not None:
         # Warn if y_train is not binary
@@ -164,12 +169,12 @@ def compare_model_performance(
     """
     Compare performance of two models with various metrics and plots.
     """
-    # Convert inputs to NumPy arrays if they are PyTorch tensors and ensure they are flattened
-    y_true = y_true.numpy().flatten() if isinstance(y_true, torch.Tensor) else np.array(y_true).flatten()
-    y_pred_1 = y_pred_1.numpy().flatten() if isinstance(y_pred_1, torch.Tensor) else np.array(y_pred_1).flatten()
-    y_pred_2 = y_pred_2.numpy().flatten() if isinstance(y_pred_2, torch.Tensor) else np.array(y_pred_2).flatten()
-    y_train = y_train.numpy().flatten() if isinstance(y_train, torch.Tensor) else np.array(y_train).flatten() if y_train is not None else None
-    
+    # Convert inputs to NumPy arrays and ensure they are flattened
+    y_true = to_numpy(y_true).flatten()
+    y_pred_1 = to_numpy(y_pred_1).flatten()
+    y_pred_2 = to_numpy(y_pred_2).flatten()
+    y_train = to_numpy(y_train).flatten() if y_train is not None else None
+
     if y_train is not None:
         # Warn if y_train is not binary
         unique_values = np.unique(y_train)
@@ -301,10 +306,8 @@ def bootstrap_auc_ci(pred, target, n_bootstraps=1000, alpha=0.05):
     tuple
         Lower and upper bounds of the confidence interval.
     """
-    if isinstance(pred, pd.Series):
-        pred = pred.values
-    if isinstance(target, pd.Series):
-        target = target.values
+    pred = to_numpy(pred)
+    target = to_numpy(target)
     
     n_samples = len(target)
     bootstrapped_scores = []

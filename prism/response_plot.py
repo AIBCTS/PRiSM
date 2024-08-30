@@ -6,6 +6,11 @@ from prism.lasso_results import LassoResultsManager
 from prism.partial_responses import partial_responses_subset
 from prism.nomogram import NomogramGenerator
 
+def to_numpy(tensor_or_array):
+    if isinstance(tensor_or_array, torch.Tensor):
+        return tensor_or_array.cpu().numpy()
+    return np.asarray(tensor_or_array)
+
 def plot_continuous_response_with_histogram(ax, response, x_values, feature_name, nomogram_generator, feature_index, use_odds_ratio):
     """
     Plot continuous partial response with histogram using denormalized values.
@@ -161,7 +166,8 @@ def plot_partial_responses(lasso_results: LassoResultsManager,
         subtract_univariate=subtract_univariate
     )
     
-    nomogram_generator = NomogramGenerator(lasso_results, x.cpu().numpy(), x0_median, x0_std, n_steps, categorical_threshold, sd_scale, use_odds_ratio)
+    x_numpy = to_numpy(x)
+    nomogram_generator = NomogramGenerator(lasso_results, x_numpy, x0_median, x0_std, n_steps, categorical_threshold, sd_scale, use_odds_ratio)
     
     selected_univariate_indices = lasso_results.get_selected_univariate_indices()
     selected_bivariate_indices = lasso_results.get_selected_bivariate_indices()
@@ -180,8 +186,8 @@ def plot_partial_responses(lasso_results: LassoResultsManager,
     for i in selected_univariate_indices:
         ax = axes[plot_index]
         feature_name = lasso_results.univariate_feature_names[i]
-        response = univariate_responses[i]
-        x_values = x_univariate[i]
+        response = to_numpy(univariate_responses[i])
+        x_values = to_numpy(x_univariate[i])
         if len(np.unique(x_values)) < categorical_threshold:
             plot_categorical_response_with_histogram(ax, response, x_values, feature_name, nomogram_generator, i, use_odds_ratio)
         else:
@@ -193,10 +199,10 @@ def plot_partial_responses(lasso_results: LassoResultsManager,
         ax = axes[plot_index]
         feature1 = lasso_results.univariate_feature_names[i]
         feature2 = lasso_results.univariate_feature_names[j]
-        response = bivariate_responses[biv_index]
-        x_values = x_bivariate[biv_index]
-        is_categorical1 = len(np.unique(x[:, i])) < categorical_threshold
-        is_categorical2 = len(np.unique(x[:, j])) < categorical_threshold
+        response = to_numpy(bivariate_responses[biv_index])
+        x_values = to_numpy(x_bivariate[biv_index])
+        is_categorical1 = len(np.unique(x_numpy[:, i])) < categorical_threshold
+        is_categorical2 = len(np.unique(x_numpy[:, j])) < categorical_threshold
         
         if is_categorical1 != is_categorical2:  # Mixed (one categorical, one continuous)
             categorical_feature = 0 if is_categorical1 else 1

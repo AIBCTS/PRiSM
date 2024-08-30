@@ -2,7 +2,11 @@ import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 import torch
 import numpy as np
-from typing import Any, List, Tuple, Optional
+import pandas as pd
+from datetime import datetime
+from pathlib import Path
+from typing import Any, List, Tuple, Optional, Dict
+from prism.config import MODELS_DIR
 from prism.lasso_results import LassoResultsManager
 from prism.partial_responses import partial_responses_subset
 
@@ -307,15 +311,123 @@ class NomogramGenerator:
         ax.set_ylabel(self.all_feature_names[feature2])
         plt.colorbar(contour_heatmap, ax=ax, label='Odds Ratio' if self.use_odds_ratio else 'Log Odds Ratio')
 
+    def save_nomogram_data(self, 
+                            univariate_responses, 
+                            bivariate_responses, 
+                            x_univariate, 
+                            x_bivariate, 
+                            model_info: Dict[str, Any],
+                            file_path: Optional[Path] = None) -> Tuple[Path, Path]:
+        """
+        Save the nomogram data to CSV files.
+        
+        Parameters:
+        -----------
+        univariate_responses : List[np.ndarray]
+            List of univariate response arrays
+        bivariate_responses : List[np.ndarray]
+            List of bivariate response arrays
+        x_univariate : List[np.ndarray]
+            List of univariate x values
+        x_bivariate : List[np.ndarray]
+            List of bivariate x values
+        model_info : Dict[str, Any]
+            Dictionary containing model metadata
+        file_path : Optional[Path]
+            Base path for saving the CSV files
+
+        Returns:
+        --------
+        Tuple[Path, Path]
+            Filepaths for the univariate and bivariate CSV files
+        """
+        if file_path is None:
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M")
+            base_name = f"nomogram_{timestamp}"
+            file_path = Path(MODELS_DIR) / f"{base_name}.csv"
+        else:
+            file_path = Path(file_path)
+        
+        univariate_file_path = file_path.with_name(file_path.stem + "_univariate.csv")
+        bivariate_file_path = file_path.with_name(file_path.stem + "_bivariate.csv")
+
+        def write_metadata(file_path: Path, data_type: str):
+            metadata = [
+                f"# Nomogram Data - {data_type}",
+                f"# Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+                f"# Comment: {model_info.get('comment', 'Unknown')}",
+                f"# Method: {model_info.get('method', 'Unknown')}",
+                f"# Number of discretization steps: {self.n_steps}",
+                f"# Categorical threshold: {self.categorical_threshold}",
+                f"# Response scale: {'Odds ratio' if self.use_odds_ratio else 'Log odds ratio'}",
+                ""
+            ]
+            with open(file_path, 'w') as f:
+                f.write('\n'.join(metadata))
+
+        # Process univariate data
+        univariate_data = {}
+        max_length = 0
+        selected_univariate_indices = self.lasso_results.get_selected_univariate_indices()
+        for i in selected_univariate_indices:
+            feature_name = self.all_feature_names[i]
+            x_values = x_univariate[i]
+            responses = univariate_responses[i]
+            max_length = max(max_length, len(x_values), len(responses))
+            univariate_data[f"{feature_name}_x"] = x_values
+            univariate_data[f"{feature_name}_response"] = responses
+
+        # Pad univariate data
+        for key in univariate_data:
+            univariate_data[key] = np.pad(univariate_data[key], 
+                                            (0, max_length - len(univariate_data[key])), 
+                                            mode='constant', 
+                                            constant_values=np.nan)
+
+        # Save univariate data
+        write_metadata(univariate_file_path, "Univariate")
+        pd.DataFrame(univariate_data).to_csv(univariate_file_path, mode='a', index=False)
+        
+        # Process bivariate data
+        bivariate_data = {}
+        max_length = 0
+        bivariate_indices = self.lasso_results.get_selected_bivariate_indices()
+        bivariate_pairs = self.lasso_results.get_selected_bivariate_index_pairs()
+        for i, (idx1, idx2) in zip(bivariate_indices, bivariate_pairs):
+            feature1, feature2 = self.all_feature_names[idx1], self.all_feature_names[idx2]
+            pair_name = f"{feature1}_{feature2}"
+            x_values = x_bivariate[i]
+            responses = bivariate_responses[i]
+            max_length = max(max_length, len(x_values), len(responses))
+            bivariate_data[f"{pair_name}_x1"] = x_values[:, 0]
+            bivariate_data[f"{pair_name}_x2"] = x_values[:, 1]
+            bivariate_data[f"{pair_name}_response"] = responses
+
+        # Pad bivariate data
+        for key in bivariate_data:
+            bivariate_data[key] = np.pad(bivariate_data[key], 
+                                            (0, max_length - len(bivariate_data[key])), 
+                                            mode='constant', 
+                                            constant_values=np.nan)
+
+        # Save bivariate data
+        write_metadata(bivariate_file_path, "Bivariate")
+        pd.DataFrame(bivariate_data).to_csv(bivariate_file_path, mode='a', index=False)
+
+        print(f"Univariate nomogram data saved to {univariate_file_path}")
+        print(f"Bivariate nomogram data saved to {bivariate_file_path}")
+
+        return univariate_file_path, bivariate_file_path
+
 def nomogram(lasso_results: LassoResultsManager, x: torch.Tensor, 
              x0_median: np.ndarray, x0_std: np.ndarray, model: Any, 
              n_steps: int = 15, sd_scale: float = 2, 
              method: str = "dirac", device: str = "cpu", 
              categorical_threshold: int = 15,
              subtract_univariate: bool = True, show_fig: bool = True,
-             return_fig: bool = False, use_odds_ratio: bool = False) -> Tuple[List[np.ndarray], List[np.ndarray], List[np.ndarray], List[np.ndarray]]:
+             return_fig: bool = False, use_odds_ratio: bool = False,
+             save_csv: bool =False, csv_comment: Optional[str] = None, file_path: Optional[str] = None) -> Tuple[List[np.ndarray], List[np.ndarray], List[np.ndarray], List[np.ndarray], List[int], List[int], Optional[plt.Figure], Optional[plt.Figure]]:
     
-
     # Calculate subset of partial responses
     univariate_responses, bivariate_responses, x_univariate, x_bivariate = partial_responses_subset(
         x, model, method=method, device=device, n_steps=n_steps, 
@@ -353,11 +465,30 @@ def nomogram(lasso_results: LassoResultsManager, x: torch.Tensor,
         if show_fig:
             plt.show()
 
-    # Return responses and optionally return figures
+    if save_csv:
+        univariate_file, bivariate_file = nomogram_generator.save_nomogram_data(
+            univariate_responses,
+            bivariate_responses,
+            x_univariate,
+            x_bivariate,
+            {
+                'comment': csv_comment,
+                'method': method
+            },
+            file_path=file_path
+        )
+    
+    # Get selected indices and pairs
+    selected_univariate_indices = lasso_results.get_selected_univariate_indices()
+    selected_bivariate_pairs = lasso_results.get_selected_bivariate_index_pairs()
+
+    # Return responses, optionally return figures, and return selected indices/pairs
     if return_fig:
-        return univariate_responses, bivariate_responses, x_univariate, x_bivariate, fig_main, fig_non_mixed
+        return (univariate_responses, bivariate_responses, x_univariate, x_bivariate,
+                selected_univariate_indices, selected_bivariate_pairs, fig_main, fig_non_mixed)
     else:
-        return univariate_responses, bivariate_responses, x_univariate, x_bivariate
+        return (univariate_responses, bivariate_responses, x_univariate, x_bivariate, 
+                selected_univariate_indices, selected_bivariate_pairs, None, None)
 
 def align_and_plot(fig1, fig2, title1, title2, max_width, max_height):
     # Get the image data from the figures
