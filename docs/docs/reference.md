@@ -1,5 +1,9 @@
-:::prism.PRiSM_functions
+:::prism.device_tools
+:::prism.lasso
+:::prism.lasso_results
 :::prism.maskedmlp
-:::prism.prlasso
-:::prism.prnomogram
-:::prism.save_models
+:::prism.metrics
+:::prism.nomogram
+:::prism.partial_responses
+:::prism.preprocessing
+:::prism.response_plot

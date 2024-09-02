@@ -26,7 +26,7 @@ For a full setup guide using Jupyter notebooks in VSCode, see
 - [Linux Setup](SETUP_LINUX.md)
 - [macOS Setup](SETUP_MACOS.md)
 
-Once Jupyter is setup with the virtual envrionment in VScode, see [notebooks/4.00-hpi-german-cc-example.ipynb](notebooks/4.00-hpi-german-cc-example.ipynb) for an example runthrough of the PRiSM method (_to be replaced with a proper tutorial notebook_). Alternatively, run it in Jupyter directly by with `jupyter notebook /notebooks/4.00-hpi-german-cc-example.ipynb`.
+Once Jupyter is setup with the virtual envrionment in VScode, see [notebooks/4.00-hpi-german-cc-example.ipynb](notebooks/4.00-hpi-german-cc-example.ipynb) for an example runthrough of the PRiSM method. Alternatively, run it with Jupyter directly in your browser with `jupyter notebook /notebooks/4.00-hpi-german-cc-example.ipynb`.
 
 Documentation for the PRiSM codebase will eventually be hosted via github pages, but for now it can be viewed locally. See [docs/README.md](docs/README.md).
 
