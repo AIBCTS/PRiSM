@@ -74,21 +74,20 @@ make create_environment CUSTOM_PYTHON=/opt/python/3.11.7/bin/python3
 Here is an overview of the key steps in PRiSM, as illustred in [notebooks/4.00-hpi-german-cc-example.ipynb](notebooks/4.00-hpi-german-cc-example.ipynb):
 
 ```mermaid
-%% Set default styles
 %%{init: {'theme': 'base', 'themeVariables': { 'primaryTextColor': '#000000' }}}%%
 
 graph TD
     A[Load and Preprocess Data] --> B[Train Initial Black Box Model]
     B --> C[Evaluate Black Box Model]
-    C --> D[Calculate Partial Responses for Black Box]
+    B --> D[Calculate Partial Responses for Black Box]
     D --> E[Perform LASSO on Partial Responses]
     E --> F[Generate Initial Nomogram]
-    F --> G[Train Partial Response Network PRN]
+    E --> G[Train Partial Response Network PRN]
     G --> H[Evaluate PRN]
-    H --> I[Calculate Partial Responses for PRN]
+    G --> I[Calculate Partial Responses for PRN]
     I --> J[Perform LASSO on PRN Partial Responses]
     J --> K[Evaluate PRN-LASSO Model]
-    K --> L[Generate Final Nomogram]
+    J --> L[Generate Final Nomogram]
     
     classDef dataPrepClass fill:#d8b5ff,stroke:#333,stroke-width:2px
     classDef modelTrainClass fill:#9cc3ff,stroke:#333,stroke-width:2px
