@@ -6,9 +6,9 @@ import numpy as np
 
 
 from importlib import reload
-import prnomogram
-reload(prnomogram)
-from prnomogram import prnomogram_refactor
+import prism.prnomogram_func
+reload(prism.prnomogram_func)
+from prism.prnomogram_func import prnomogram_refactor
 
 
 # ## Import nomogram arguments

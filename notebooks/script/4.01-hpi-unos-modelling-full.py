@@ -40,7 +40,7 @@ from sklearn.linear_model import LogisticRegression
 
 device = 'cpu'
 method = 'dirac'
-SAVE_MODELS = True
+SAVE_MODELS = False
 
 seed = 257
 
