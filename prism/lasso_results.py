@@ -36,6 +36,20 @@ class LassoResultsManager:
             raise ValueError("Invalid lambda index")
         self.selected_lambda_index = lambda_index
 
+    def select_lambda_max_test_auc(self):
+        """
+        Select the lambda that produces the highest test AUC.
+        
+        Returns:
+        int: The index of the selected lambda
+        """
+        max_auc_index = np.argmax(self.test_aucs)
+        self.selected_lambda_index = max_auc_index
+        print(f"Selected lambda index: {max_auc_index}")
+        print(f"Selected lambda value: {self.lambdas[max_auc_index]:.4f}")
+        print(f"Corresponding test AUC: {self.test_aucs[max_auc_index]:.4f}")
+        return max_auc_index
+
     def get_selected_beta(self) -> np.ndarray:
         if self.selected_lambda_index is None:
             raise ValueError("No lambda selected")
