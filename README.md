@@ -74,7 +74,14 @@ make create_environment CUSTOM_PYTHON=/opt/python/3.11.7/bin/python3
 Here is an overview of the key steps in PRiSM, as illustred in [notebooks/4.00-hpi-german-cc-example.ipynb](notebooks/4.00-hpi-german-cc-example.ipynb):
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'primaryTextColor': '#000000' }}}%%
+%%{init: {
+  'theme': 'base', 
+  'themeVariables': { 
+    'primaryTextColor': '#000000',
+    'lineColor': '#606060',
+    'arrowheadColor': '#606060'
+  }
+}}%%
 
 graph TD
     A[Load and Preprocess Data] --> B[Train Initial Black Box Model]
