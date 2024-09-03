@@ -265,6 +265,6 @@ def train_mlp_batched(x_tr, y_tr, x_ts, y_ts, n_hidden, lr=0.001, weight_decay=0
             break
 
         if epoch % 1 == 0:
-            print(f"Epoch {epoch}: Train loss {train_loss:.4f}, Val loss {val_loss:.4f}")
+            print(f"Epoch {epoch}: Train loss {train_loss:.4f}, Test loss {val_loss:.4f}")
 
     return model

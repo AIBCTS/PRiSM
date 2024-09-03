@@ -1,22 +1,20 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# # PRiSM Example: German Credit Card Data
+# # PRiSM Example: UNOS Heart Transplant Data
 # 
 # This notebook demonstrates the PRiSM (Partial Responses in Structured Models) method, which is designed to transform black-box classifiers into inherently interpretable models without compromising predictive performance. This approach is particularly valuable in high-stakes applications where understanding the model's decision-making process is crucial.
 # 
-# The method addresses a key challenge in machine learning: the trade-off between model complexity and interpretability. It allows us to create models that are both accurate and transparent. In this example, we'll use a German credit card dataset to illustrate the PRiSM method. While this isn't a medical dataset, the principles demonstrated here are directly applicable to clinical data and decision support systems.
+# The method addresses a key challenge in machine learning: the trade-off between model complexity and interpretability. It allows us to create models that are both accurate and transparent. In this example, we'll use the UNOS (United Network for Organ Sharing) heart transplant dataset to illustrate the PRiSM method.
 # 
-# Here, the target outcome we are modelling is "Class label", which refers to:
+# Here, the target outcome we are modelling is "oneyearmort", which refers to:
 # 
-# - 0: a customer who **did not default** on their loan
-# - 1: a customer who **did default** on their loan
+# - 0: a patient who survived at least one year after heart transplant
+# - 1: a patient who died within one year of heart transplant
 # 
-# We would like to use the available features to model the likelihood of a customer defaulting, and understand how each feature contributes to that likelihood.
+# We would like to use the available features to model the likelihood of one-year mortality after heart transplantation, and understand how each feature contributes to that likelihood.
 # 
-# ## 1. Setup and Imports
 # 
-# First, we need to import the necessary libraries and set up our environment.
 
 get_ipython().run_line_magic('load_ext', 'autoreload')
 get_ipython().run_line_magic('autoreload', '2')
@@ -27,7 +25,7 @@ import torch
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-from prism.config import RAW_DATA_DIR, MODELS_DIR
+from prism.config import PROCESSED_DATA_DIR, MODELS_DIR
 from prism.preprocessing import normalize, feature_summary, plot_feature_histograms
 from prism.maskedmlp import train_mlp_batched, train_maskedmlp
 from prism.partial_responses import partial_responses
@@ -41,9 +39,19 @@ from prism.metrics import evaluate_model_performance, compare_model_performance
 get_ipython().run_line_magic('reload_ext', 'autoreload')
 
 
+# ## 1. Setup and Imports
+# 
+# First, we need to import the necessary libraries and set up our environment.
+# 
 # We set up our computational device (CPU or GPU if available) and set a random seed for reproducibility.
 # 
-# We'll use the 'lebesgue' method for partial responses, which is one of two methods (the other being 'dirac') for calculating partial responses. The Lebesgue method uses an average over the predicted surface, which can be more stable for some datasets, but more computationally intensive. If you're working with a bigger dataset, or low compute resources, starting with 'dirac' may be better.
+# We'll use the 'dirac' method for partial responses, which is one of two methods (the other being 'lebesgue') for calculating partial responses. The Dirac method calculates the effect of each feature individually, which can be computationally efficient but may miss some complex interactions.
+# 
+# 
+
+# We set up our computational device (CPU or GPU if available) and set a random seed for reproducibility.
+# 
+# Two methods, 'lebesgue' and 'dirac', can be used to calculate partial responses. The Lebesgue method uses an average over the predicted surface, which can be more stable for some datasets, but more computationally intensive. If you're working with a bigger dataset, or low compute resources, starting with 'dirac' may be better.
 
 # Set device to 'cpu', or GPU ('cuda' for NVIDIA, 'mps' for Apple Silicon)
 # By default, we select the best available device
@@ -56,11 +64,11 @@ np.random.seed(random_seed)
 torch.manual_seed(random_seed)
 
 # Set method and other parameters
-partial_response_method  = 'lebesgue'
+partial_response_method = 'dirac'
 SAVE_METRICS = True
 
 # TODO: setup model saving.
-SAVE_MODELS = False 
+SAVE_MODELS = False
 
 
 # For multithreading compute-intensive tasks, the recommended number of workers for GPU processing is 1, otherwise for CPU stick to the default (number of logical cores - 1). However, depending on your hardware, you may want to experiment.
@@ -74,116 +82,82 @@ print(f"max_workers = {max_workers}")
 
 # ## 2. Load and Preprocess Data
 # 
-# Next, we load the German credit card data and perform necessary preprocessing steps.
-
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import LabelEncoder
-from sklearn.impute import SimpleImputer
-
-def preprocess_german_credit_data(data, target_column, feature_columns, test_size=0.2, random_state=257, shuffle=False, credit_scale=0.01):
-    """
-    Preprocess the German Credit Card dataset.
-
-    Parameters:
-    data (pd.DataFrame): The raw German Credit Card dataset
-    target_column (str or int): The name or index of the target column
-    feature_columns (list): List of column names or indices to use as features
-    test_size (float): Proportion of the dataset to include in the test split
-    random_state (int): Random state for reproducibility
-
-    Returns:
-    tuple: X_train, X_test, y_train, y_test (all as pd.DataFrame or pd.Series)
-    """
-    # Select features and target
-    if isinstance(target_column, int):
-        target_column = data.columns[target_column]
-    
-    if all(isinstance(col, int) for col in feature_columns):
-        feature_columns = data.columns[feature_columns]
-    
-    X = data.copy()[feature_columns]
-    y = data[target_column]
-
-    # Scale the 'Credit amount' if it exists in the dataset
-    if 'Credit amount' in data.columns:
-        X['Credit amount'] = X['Credit amount'] * credit_scale
-        X['Credit amount'] = X['Credit amount'].round()
-
-    # Encode categorical variables
-    label_encoder = LabelEncoder()
-    for column in X.select_dtypes(include=['object']):
-        X[column] = label_encoder.fit_transform(X[column].astype(str))
-
-    # Impute missing values
-    imputer = SimpleImputer(strategy='median')
-    X = pd.DataFrame(imputer.fit_transform(X), columns=X.columns)
-
-    # Split the data into training and testing sets
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size,random_state=random_seed,shuffle=shuffle)
-
-    # Ensure the target variable is binary
-    y_train = (y_train == y_train.max()).astype(int)
-    y_test = (y_test == y_test.max()).astype(int)
-
-    return X_train, X_test, y_train, y_test
-
+# Next, we load the UNOS heart transplant data and perform necessary preprocessing steps.
+# 
+# 
 
 # Load data
-german_credit_data = pd.read_csv(RAW_DATA_DIR.joinpath('GermanCC_attributes.csv'))
+data_train = pd.read_csv(PROCESSED_DATA_DIR.joinpath('imputed_dataset1_train.csv'))
+data_test = pd.read_csv(PROCESSED_DATA_DIR.joinpath('imputed_dataset1_test.csv'))
+data_val = pd.read_csv(PROCESSED_DATA_DIR.joinpath('imputed_dataset1_val.csv'))
 
-target_column = 'Class label'
-feature_columns = [0, 1, 2, 4, 5, 6, 13, 19, 20, 21]  # List of column indices to use as features
+# Drop id column
+data_train.drop('trr_id_code', axis=1, inplace=True)
+data_test.drop('trr_id_code', axis=1, inplace=True)
+data_val.drop('trr_id_code', axis=1, inplace=True)
 
-X_train, X_test, y_train, y_test = preprocess_german_credit_data(
-    german_credit_data, 
-    target_column, 
-    feature_columns,
-    credit_scale=0.01,
-    test_size=0.3, 
-    random_state=random_seed
-)
+target_col = 'oneyearmort'
 
-# Normalize the data to ensure all features have a median of zero
+X_train = data_train.drop(target_col, axis=1)
+y_train = data_train[target_col]
+
+X_test = data_test.drop(target_col, axis=1)
+y_test = data_test[target_col]
+
+X_val = data_val.drop(target_col, axis=1)
+y_val = data_val[target_col]
+
+# Normalize the data
 X_train_normalized, X_test_normalized = normalize(X_train, X_test)
+X_val_normalized = normalize(X_val)
 
-# Convert to tensors for use with PyTorch
+# Convert to tensors
 X_train_tensor = torch.tensor(X_train_normalized.values, dtype=torch.float32, device=device)
 X_test_tensor = torch.tensor(X_test_normalized.values, dtype=torch.float32, device=device)
+X_val_tensor = torch.tensor(X_val_normalized.values, dtype=torch.float32, device=device)
+
 y_train_tensor = torch.tensor(y_train.values, dtype=torch.float32, device=device)
 y_test_tensor = torch.tensor(y_test.values, dtype=torch.float32, device=device)
+y_val_tensor = torch.tensor(y_val.values, dtype=torch.float32, device=device)
 
 feature_names = [
-    'Account Status',
-    'Duration (Months)',
-    'Credit History',
-    'Credit Amount',
-    'Savings/Bonds',
-    'Employment Length',
-    'Other Plans',
-    'Foreign Worker',
-    'Unknown1',
-    'Unknown2'
+    'don age',
+    'don isch time min',
+    'rec age',
+    'rec creat',
+    'rec infect 2wk',
+    'rec vent',
+    'rec sex',
+    'tx year',
+    'ICM',
+    'NICM',
+    'prior tx'
 ]
 
 
 # ## 3. Data Overview
-
-# Before building our models, we'll get an overview of the data.
+# 
+# Before building our models, let's get an overview of the data.
+# 
+# 
 
 print("Shape of training data:", X_train.shape)
 print("Shape of testing data:", X_test.shape)
-print("\nClass distribution in training set:")
+print("Shape of validation data:", X_val.shape)
+print(f"\nClass distribution in training set ({X_train['tx_year'].min()} - {X_train['tx_year'].max()}):")
 print(y_train.value_counts(normalize=True))
-print("\nClass distribution in test set:")
+print(f"\nClass distribution in test set ({X_test['tx_year'].min()} - {X_test['tx_year'].max()}):")
 print(y_test.value_counts(normalize=True))
+print(f"\nClass distribution in validation set ({X_val['tx_year'].min()} - {X_val['tx_year'].max()}):")
+print(y_val.value_counts(normalize=True))
 
 
-feature_stats = feature_summary(X_train, categorical_threshold = 15)
+feature_stats = feature_summary(X_train, categorical_threshold=15)
 print("Feature Statistics:")
 print(feature_stats)
 
 
-plot_feature_histograms(X_train, feature_stats,figsize=(15,15),feature_names=[*feature_names,'Class label']);
+plot_feature_histograms(X_train, feature_stats, figsize=(15,15), feature_names=feature_names)
 
 
 # Correlation matrix
@@ -199,16 +173,18 @@ plt.show()
 # ## 4. Train Initial Black Box Model (MLP)
 # 
 # We start by training a black box model, in this case, a Multi-Layer Perceptron (MLP) with 10 nodes in the hidden layer. This model serves as our baseline and represents the type of hard-to-interpret model that is often used in machine learning.
+# 
+# 
 
 mlp_hyperparameters = {
     'n_hidden': 10,
-    'weight_decay': 0.0001,
+    'weight_decay': 1e-5,
     'lr': 0.001,
-    'patience': 10,
-    'tolerance': 0.00001,
-    'batch_size': 32,
+    'patience': 50,
+    'tolerance': 0.0001,
+    'batch_size': 1024,
     'device': device,
-    'seed': random_seed
+    'seed': 1
 }
 
 blackbox_model = train_mlp_batched(X_train_normalized, y_train, X_test_normalized, y_test, **mlp_hyperparameters)
@@ -225,6 +201,8 @@ results_mlp_test = evaluate_model_performance(y_test, y_pred_test_blackbox, y_tr
 # ## 5. Calculate Partial Responses
 # 
 # Now we calculate partial responses for our black box model. This is a key step in the PRiSM method. Partial responses help us understand how individual features or pairs of features contribute to the model's predictions, making the black box model more interpretable.
+# 
+# 
 
 partial_responses_params = {
     'x_train': X_train_tensor,
@@ -241,6 +219,8 @@ partial_responses_test = partial_responses(X_test_tensor, blackbox_model, **part
 # ## 6. Perform LASSO on Partial Responses
 # 
 # We use LASSO (Least Absolute Shrinkage and Selection Operator) to select the most consequential partial responses. This step helps us identify which features or feature interactions contribute most to the model's predictions. A range of regularization strengths (lambda) are used, and for each one a logistic regression model with LASSO regularization is trained and evaluated. Based on the results, we can choose the most suitable lambda, balancing model performance against the total number of selected features.
+# 
+# 
 
 lasso_results = lasso(
     partial_responses_train, 
@@ -262,7 +242,10 @@ lasso_results.plot_lambda_path()
 lasso_results.select_lambda_max_test_auc()
 
 # Alternatively, manually select lambda as needed
-# lasso_results.select_lambda(18)
+# lasso_results.select_lambda(11)
+
+
+lasso_results.plot_feature_importance()
 
 
 # ## 7. View Selected Partial Responses and Generate Nomogram
@@ -288,19 +271,20 @@ fig_blackbox = plot_partial_responses(
 )
 
 
+# 
 # We can also visualize the contribution of each partial response using a nomogram. Nomograms are particularly useful in clinical settings as they provide an intuitive visual representation of a model's decision-making process.
+# 
+# 
 
 nomogram_params = {
-    'n_steps' : 15,
-    'sd_scale' : 2,
-    'method' : partial_response_method,
-    'device' : device,
-    'categorical_threshold' : 15,
-    'subtract_univariate' : True,
-    'return_fig' : True,
-    'use_odds_ratio' : True,
-    'save_csv' : SAVE_METRICS,
-    'csv_comment' : "MLP German CC data"
+    'n_steps': 15,
+    'sd_scale': 2,
+    'method': partial_response_method,
+    'device': device,
+    'categorical_threshold': 15,
+    'subtract_univariate': True,
+    'return_fig': True,
+    'use_odds_ratio': True
 }
 
 nomogram_results = nomogram(
@@ -325,15 +309,17 @@ nomogram_non_mixed_mlp = nomogram_results[7]
 # 
 # - Univariate subnets: Handle individual feature effects
 # - Bivariate subnets: Capture interactions between two features
-# - The number of nodes per subnet is controlled by the subnet_nodes parameter in `train_maskedmlp` (default 5)
+# - The number of nodes per subnet is controlled by the subnet_nodes parameter in `mlpmask_pytorch` (default 5)
 # 
-# This gives us a resulting network structure as follows
+# This gives us a resulting network structure as follows:
 # 
 # - Input layer: Original features
 # - Hidden layer: Structured into subnets based on the mask
 # - Output layer: Single node for binary classification
 # 
-# The resulting PRN maintains interpretability because each subnet corresponds to a specific feature or interaction. Therefore, contribution of each feature/interaction can be analyzed separately, and the overall prediction is a sum of these interpretable components.
+# The resulting PRN maintains interpretability because each subnet corresponds to a specific feature or interaction. Therefore, the contribution of each feature/interaction can be analyzed separately, and the overall prediction is a sum of these interpretable components.
+# 
+# 
 
 mask, n_features = lasso_results.get_mask()
 
@@ -343,9 +329,9 @@ prn_hyperparameters = {
     'mask': mask,
     'subnet_nodes': 5,
     'iter': 10000,
-    'lr': 0.001,
+    'lr': 0.05,
     'weight_decay': 0.00001,
-    'tolerance': 0.00001,
+    'tolerance': 0.0001,
     'patience': 100,
     'device': device,
     'seed': random_seed
@@ -368,6 +354,7 @@ results_prn_mlp_test = compare_model_performance(y_test, y_pred_test_blackbox, y
 # ## 9. LASSO on PRN
 # 
 # We perform LASSO again, this time on the Partial Response Network to isolate the most important features and interactions.
+# 
 # 
 
 partial_responses_params_prn = {
@@ -402,12 +389,12 @@ lasso_results_prn.plot_lambda_path()
 lasso_results_prn.select_lambda_max_test_auc()
 
 # Alternatively, manually select lambda as needed
-# lasso_results_prn.select_lambda(38)
+# lasso_results_prn.select_lambda(20)
+
+lasso_results_prn.plot_feature_importance()
 
 
-# ## 10. Generate Final Nomogram
-# 
-# Finally, we generate a nomogram for our PRN, based on the features selected with LASSO. The nomogram provides a visual tool that can be used to understand the model's decisions.
+# ## 10. Generate Final Partial Response Plots and Nomogram
 
 fig_prn = plot_partial_responses(
     lasso_results_prn,
@@ -428,7 +415,9 @@ fig_prn = plot_partial_responses(
 )
 
 
-get_ipython().run_cell_magic('capture', '', '# ^ Supress nomogram plot output, will display side-by-side instead\n\nnomogram_params_prn = {\n    \'n_steps\' : 15,\n    \'sd_scale\' : 2,\n    \'method\' : partial_response_method,\n    \'device\' : device,\n    \'categorical_threshold\' : 15,\n    \'subtract_univariate\' : True,\n    \'show_fig\' : False,\n    \'return_fig\' : True,\n    \'use_odds_ratio\' : True,\n    \'save_csv\' : SAVE_METRICS,\n    \'csv_comment\' : "PRN German CC data"\n}\n\nnomogram_results_prn = nomogram(\n    lasso_results_prn,\n    X_train_tensor,\n    X_train.median().values,\n    X_train.std().values,\n    partial_response_network,\n    **nomogram_params_prn\n)\n\nnomogram_main_prn = nomogram_results_prn[6]\nnomogram_non_mixed_prn = nomogram_results_prn[7]\n')
+# Finally, we generate a nomogram for our PRN, based on the features selected with LASSO. The nomogram provides a visual tool that can be used to understand the model's decisions.
+
+get_ipython().run_cell_magic('capture', '', "# ^ Supress nomogram plot output, will display side-by-side instead\n\nnomogram_params_prn = {\n    'n_steps': 15,\n    'sd_scale': 2,\n    'method': partial_response_method,\n    'device': device,\n    'categorical_threshold': 15,\n    'subtract_univariate': True,\n    'show_fig': False,\n    'return_fig': True,\n    'use_odds_ratio': True\n}\n\nnomogram_results_prn = nomogram(\n    lasso_results_prn,\n    X_train_tensor,\n    X_train.median().values,\n    X_train.std().values,\n    partial_response_network,\n    **nomogram_params_prn\n)\n\nnomogram_main_prn = nomogram_results_prn[6]\nnomogram_non_mixed_prn = nomogram_results_prn[7]\n")
 
 
 display_nomograms_side_by_side(nomogram_main_mlp, nomogram_non_mixed_mlp,
@@ -437,11 +426,11 @@ display_nomograms_side_by_side(nomogram_main_mlp, nomogram_non_mixed_mlp,
 
 # ## 11. Evaluate PRN-LASSO Model
 # 
-# Finally, we evaluate the simplified model (multivariate logisitic regression with LASSO regularization) trained on the partial responses of the PRN, based on the selected lambda.
+# Finally, we evaluate the simplified model (multivariate logistic regression with LASSO regularization) trained on the partial responses of the PRN, based on the selected lambda.
 # 
-# This notebook demonstrates the PRiSM method, transforming a black box model into an interpretable one without sacrificing predictive performance. This approach is particularly valuable when understanding the model's decision-making process is crucial for building trust and gaining insights.
+# This notebook demonstrates the PRiSM method, transforming a black box model into an interpretable one without sacrificing predictive performance. This approach is particularly valuable when understanding the model's decision-making process is crucial for building trust and gaining insights in clinical decision-making scenarios like predicting one-year mortality after heart transplantation.
 # 
-# The final PRN-LASSO model provides both high predictive accuracy and interpretability, allowing us to understand how different features contribute to the predictions.
+# The final PRN-LASSO model provides both high predictive accuracy and interpretability, allowing us to understand how different features contribute to the predictions of post-transplant mortality risk.
 
 prn_lasso = lasso_results_prn.get_selected_model()
 
@@ -458,4 +447,16 @@ results_prn_prn_lasso_test = compare_model_performance(y_test, y_pred_test_prn, 
 
 # Compare PRN-LASSO and original MLP (blackbox) model
 results_prn_mlp_test = compare_model_performance(y_test, y_pred_test_blackbox, y_pred_test_prn_lasso, y_train=y_train, model_names=("MLP","PRN LASSO"), title="MLP - PRN LASSO test comparison")
+
+
+# Calculate partial responses on validation dataset
+partial_responses_val_prn = partial_responses(X_val_tensor, partial_response_network, **partial_responses_params_prn)
+
+
+# Evaluate PRN-LASSO on validation dataset and compare to PRN
+y_pred_val_prn = partial_response_network.predict(X_val_tensor, device=device)
+y_pred_val_prn_lasso = prn_lasso.predict_proba(partial_responses_val_prn)[:, 1]
+
+
+results_prn_prn_lasso_test = compare_model_performance(y_val, y_pred_val_prn, y_pred_val_prn_lasso, y_train=y_train, model_names=("PRN","PRN LASSO"), title="PRN - PRN LASSO validation comparison")
 
