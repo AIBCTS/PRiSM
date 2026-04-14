@@ -1,0 +1,101 @@
+# =============================================================================
+# REQUIRED FIELDS FOR PIPELINE RUNNERS
+# =============================================================================
+# Dataset name (maps to data/raw/{dataset}.csv)
+dataset: htx_example
+
+# Models to train and analyze (used by pipeline runners)
+models: [mlp]
+# models: [mlp, xgb, rf, logreg]
+
+# =============================================================================
+# PREPROCESSING SETTINGS
+# =============================================================================
+# Random seed for reproducibility
+random_seed: 257
+
+# Target and ID variables
+target_candidates: ['event_oneyear']
+id_candidates: ['trr_id_code']
+
+# Data splitting: temporal by transplant year
+splitting_method: 'temporal'
+time_variable: 'tx_year'
+split_ratios: [0.6, 0.2, 0.2]
+drop_time_variable: true
+
+# Categorical encoding: binary→ordinal, multi-category→one-hot
+# recethcat (4 categories) and diagn (6 categories) will be one-hot encoded
+force_all_ordinal: false
+convert_numeric: true
+categorical_threshold: 8
+
+# Target inversion not needed (1 = died is positive class)
+invert_target: false
+
+# Reference column selection for one-hot encoded categorical variables
+# Options: 'alphabetical', 'most_common', 'manual'
+# Default: 'alphabetical' (if not specified)
+reference_column_strategy: 'manual'
+reference_columns:
+  diagn: 'diagn_Cardiomyopathy'
+  recethcat: 'recethcat_Caucasian'
+
+# ============================================================================
+# PRISM ANALYSIS CONFIGURATION
+# ============================================================================
+# These settings control the PRiSM analysis notebook behavior
+
+# Partial response calculation method
+# - 'lebesgue': Integration over feature distributions (default, recommended)
+# - 'dirac': Point-mass evaluation at observed values
+partial_response_method: 'lebesgue'
+
+# Trim quantile for plot variable ranges
+# - null: No trimming (show full range)
+# - 0.01: Trim 1% from each tail
+# - 0.05: Trim 5% from each tail
+trim_quantile: 0.01
+
+# Save nomogram JSON files for later use/reproduction
+save_nomogram_json: true
+
+# Save generated figures to disk
+save_figs: false
+
+# ============================================================================
+# HYPERPARAMETER TUNING CONFIGURATION
+# ============================================================================
+hyperparameter_tuning:
+  n_jobs: 8
+  metric: 'test_auc'
+  enabled: true
+  n_trials: 32
+  xgb:
+    n_trials: 64
+  rf:
+    n_trials: 64
+  logreg:
+    n_trials: 16
+
+
+# LASSO Lambda Selection
+# If not specified, defaults to: max_test_auc with target_ratio=0.998
+#
+# Available methods:
+#   - max_test_auc: Select lambda achieving target_ratio of max AUC (default)
+#   - min_test_auc: Select sparsest lambda exceeding min_auc threshold
+#   - non_inferiority: Select sparsest lambda meeting dynamic AUC threshold
+#       threshold = max_auc - ni_level * (max_auc - 0.5)
+#       e.g., ni_level=0.1 with max_auc=0.80 -> threshold=0.77
+#   - by_features: Select lambda with target_features count
+#   - by_index: Select specific lambda_index directly
+lasso_lambda_selection:
+  blackbox:
+    method: 'max_test_auc'
+    target_ratio: 0.998
+    beta_threshold: 0.1
+  prn:
+    method: 'max_test_auc'
+    target_ratio: 0.998
+    beta_threshold: 0.1

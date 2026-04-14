@@ -1,0 +1,396 @@
+{
+  "numerical_imputation_method": "random",
+  "categorical_imputation_method": "random",
+  "encoding": {
+    "diagn": {
+      "encoding_type": "one-hot",
+      "created_columns": [
+        "diagn_CAD",
+        "diagn_Cardiomyopathy",
+        "diagn_Congenital",
+        "diagn_Graftfailure",
+        "diagn_Misc",
+        "diagn_Valve"
+      ],
+      "mapping": {
+        "CAD": "diagn_CAD",
+        "Cardiomyopathy": "diagn_Cardiomyopathy",
+        "Congenital": "diagn_Congenital",
+        "Graftfailure": "diagn_Graftfailure",
+        "Valve": "diagn_Valve",
+        "Misc": "diagn_Misc"
+      },
+      "reverse_mapping": {
+        "diagn_CAD": "CAD",
+        "diagn_Cardiomyopathy": "Cardiomyopathy",
+        "diagn_Congenital": "Congenital",
+        "diagn_Graftfailure": "Graftfailure",
+        "diagn_Valve": "Valve",
+        "diagn_Misc": "Misc"
+      },
+      "original_categories": [
+        "CAD",
+        "Cardiomyopathy",
+        "Congenital",
+        "Graftfailure",
+        "Misc",
+        "Valve"
+      ],
+      "original_column": "diagn"
+    },
+    "recethcat": {
+      "encoding_type": "one-hot",
+      "created_columns": [
+        "recethcat_African American",
+        "recethcat_Caucasian",
+        "recethcat_Hispanic",
+        "recethcat_Other"
+      ],
+      "mapping": {
+        "Caucasian": "recethcat_Caucasian",
+        "Hispanic": "recethcat_Hispanic",
+        "African American": "recethcat_African American",
+        "Other": "recethcat_Other"
+      },
+      "reverse_mapping": {
+        "recethcat_Caucasian": "Caucasian",
+        "recethcat_Hispanic": "Hispanic",
+        "recethcat_African American": "African American",
+        "recethcat_Other": "Other"
+      },
+      "original_categories": [
+        "African American",
+        "Caucasian",
+        "Hispanic",
+        "Other"
+      ],
+      "original_column": "recethcat"
+    }
+  },
+  "numerical_stats": {
+    "event_oneyear": {
+      "mean": 0.10849056603773585,
+      "median": 0.0,
+      "std": 0.31107235084733875,
+      "min": 0.0,
+      "max": 1.0,
+      "missing_count": 0,
+      "missing_pct": 0.0
+    },
+    "recageyear": {
+      "mean": 52.68301886792453,
+      "median": 56.0,
+      "std": 12.647412773853207,
+      "min": 18.0,
+      "max": 77.0,
+      "missing_count": 0,
+      "missing_pct": 0.0
+    },
+    "recweightkg": {
+      "mean": 81.7949295754717,
+      "median": 80.7394,
+      "std": 17.944522945061284,
+      "min": 36.2874,
+      "max": 144.9,
+      "missing_count": 0,
+      "missing_pct": 0.0
+    },
+    "recbilirubin": {
+      "mean": 16.463124528301886,
+      "median": 13.68,
+      "std": 11.260341692135936,
+      "min": 1.71,
+      "max": 50.0,
+      "missing_count": 0,
+      "missing_pct": 0.0
+    },
+    "donage": {
+      "mean": 31.536792452830188,
+      "median": 30.0,
+      "std": 11.400163312141688,
+      "min": 16.0,
+      "max": 63.0,
+      "missing_count": 0,
+      "missing_pct": 0.0
+    },
+    "donweight": {
+      "mean": 81.70704257594339,
+      "median": 80.0,
+      "std": 18.502140047533462,
+      "min": 35.0,
+      "max": 169.0,
+      "missing_count": 0,
+      "missing_pct": 0.0
+    },
+    "donischemictimeminutes": {
+      "mean": 192.64668445188678,
+      "median": 189.99023,
+      "std": 65.30924236769556,
+      "min": 22.998047,
+      "max": 600.0,
+      "missing_count": 0,
+      "missing_pct": 0.0
+    },
+    "recsex": {
+      "mean": 0.2665094339622642,
+      "median": 0.0,
+      "std": 0.44223795365216917,
+      "min": 0.0,
+      "max": 1.0,
+      "missing_count": 0,
+      "missing_pct": 0.0
+    },
+    "recdialysis": {
+      "mean": 0.04339622641509434,
+      "median": 0.0,
+      "std": 0.20379544840331013,
+      "min": 0.0,
+      "max": 1.0,
+      "missing_count": 0,
+      "missing_pct": 0.0
+    },
+    "rececmo": {
+      "mean": 0.02169811320754717,
+      "median": 0.0,
+      "std": 0.14573030808937734,
+      "min": 0.0,
+      "max": 1.0,
+      "missing_count": 0,
+      "missing_pct": 0.0
+    },
+    "recvad": {
+      "mean": 0.37075471698113205,
+      "median": 0.0,
+      "std": 0.4831208481022999,
+      "min": 0.0,
+      "max": 1.0,
+      "missing_count": 0,
+      "missing_pct": 0.0
+    },
+    "reciabp": {
+      "mean": 0.10943396226415095,
+      "median": 0.0,
+      "std": 0.3122565654984589,
+      "min": 0.0,
+      "max": 1.0,
+      "missing_count": 0,
+      "missing_pct": 0.0
+    },
+    "recventilator": {
+      "mean": 0.02122641509433962,
+      "median": 0.0,
+      "std": 0.144172323809711,
+      "min": 0.0,
+      "max": 1.0,
+      "missing_count": 0,
+      "missing_pct": 0.0
+    },
+    "donsex": {
+      "mean": 0.29150943396226414,
+      "median": 0.0,
+      "std": 0.45456479236041497,
+      "min": 0.0,
+      "max": 1.0,
+      "missing_count": 0,
+      "missing_pct": 0.0
+    },
+    "recinfections2weeks": {
+      "mean": 0.11037735849056604,
+      "median": 0.0,
+      "std": 0.3134334651871132,
+      "min": 0.0,
+      "max": 1.0,
+      "missing_count": 0,
+      "missing_pct": 0.0
+    },
+    "creatinine_clearance": {
+      "mean": 83.2262075471698,
+      "median": 77.11,
+      "std": 37.92100058758105,
+      "min": 10.72,
+      "max": 462.99,
+      "missing_count": 0,
+      "missing_pct": 0.0
+    },
+    "diagn_CAD": {
+      "mean": 0.3589622641509434,
+      "median": 0.0,
+      "std": 0.4798092849950903,
+      "min": 0.0,
+      "max": 1.0,
+      "missing_count": 0,
+      "missing_pct": 0.0
+    },
+    "diagn_Congenital": {
+      "mean": 0.02830188679245283,
+      "median": 0.0,
+      "std": 0.1658730485527232,
+      "min": 0.0,
+      "max": 1.0,
+      "missing_count": 0,
+      "missing_pct": 0.0
+    },
+    "diagn_Graftfailure": {
+      "mean": 0.029245283018867925,
+      "median": 0.0,
+      "std": 0.16853306579867022,
+      "min": 0.0,
+      "max": 1.0,
+      "missing_count": 0,
+      "missing_pct": 0.0
+    },
+    "diagn_Misc": {
+      "mean": 0.017452830188679245,
+      "median": 0.0,
+      "std": 0.1309821419567223,
+      "min": 0.0,
+      "max": 1.0,
+      "missing_count": 0,
+      "missing_pct": 0.0
+    },
+    "diagn_Valve": {
+      "mean": 0.016037735849056604,
+      "median": 0.0,
+      "std": 0.1256502050752659,
+      "min": 0.0,
+      "max": 1.0,
+      "missing_count": 0,
+      "missing_pct": 0.0
+    },
+    "recethcat_African American": {
+      "mean": 0.19433962264150945,
+      "median": 0.0,
+      "std": 0.3957848192616171,
+      "min": 0.0,
+      "max": 1.0,
+      "missing_count": 0,
+      "missing_pct": 0.0
+    },
+    "recethcat_Hispanic": {
+      "mean": 0.08820754716981132,
+      "median": 0.0,
+      "std": 0.2836634113667191,
+      "min": 0.0,
+      "max": 1.0,
+      "missing_count": 0,
+      "missing_pct": 0.0
+    },
+    "recethcat_Other": {
+      "mean": 0.031132075471698113,
+      "median": 0.0,
+      "std": 0.17371558315667013,
+      "min": 0.0,
+      "max": 1.0,
+      "missing_count": 0,
+      "missing_pct": 0.0
+    }
+  },
+  "imputation_values": {
+    "event_oneyear": "random sampling from non-missing values",
+    "recageyear": "random sampling from non-missing values",
+    "recweightkg": "random sampling from non-missing values",
+    "recbilirubin": "random sampling from non-missing values",
+    "donage": "random sampling from non-missing values",
+    "donweight": "random sampling from non-missing values",
+    "donischemictimeminutes": "random sampling from non-missing values",
+    "recsex": "random sampling from non-missing values",
+    "recdialysis": "random sampling from non-missing values",
+    "rececmo": "random sampling from non-missing values",
+    "recvad": "random sampling from non-missing values",
+    "reciabp": "random sampling from non-missing values",
+    "recventilator": "random sampling from non-missing values",
+    "donsex": "random sampling from non-missing values",
+    "recinfections2weeks": "random sampling from non-missing values",
+    "creatinine_clearance": "random sampling from non-missing values",
+    "diagn_CAD": "random sampling from non-missing values",
+    "diagn_Congenital": "random sampling from non-missing values",
+    "diagn_Graftfailure": "random sampling from non-missing values",
+    "diagn_Misc": "random sampling from non-missing values",
+    "diagn_Valve": "random sampling from non-missing values",
+    "recethcat_African American": "random sampling from non-missing values",
+    "recethcat_Hispanic": "random sampling from non-missing values",
+    "recethcat_Other": "random sampling from non-missing values"
+  },
+  "column_types": {
+    "event_oneyear": "numeric",
+    "recageyear": "numeric",
+    "recweightkg": "numeric",
+    "recbilirubin": "numeric",
+    "donage": "numeric",
+    "donweight": "numeric",
+    "donischemictimeminutes": "numeric",
+    "recsex": "numeric",
+    "recdialysis": "numeric",
+    "rececmo": "numeric",
+    "recvad": "numeric",
+    "reciabp": "numeric",
+    "recventilator": "numeric",
+    "donsex": "numeric",
+    "diagn": "categorical",
+    "recinfections2weeks": "numeric",
+    "recethcat": "categorical",
+    "creatinine_clearance": "numeric"
+  },
+  "onehot_group_manager": {
+    "_type": "OneHotGroupManager",
+    "groups_dict": {
+      "diagn": [
+        "diagn_CAD",
+        "diagn_Congenital",
+        "diagn_Graftfailure",
+        "diagn_Misc",
+        "diagn_Valve"
+      ],
+      "recethcat": [
+        "recethcat_African American",
+        "recethcat_Hispanic",
+        "recethcat_Other"
+      ]
+    },
+    "reference_columns": {
+      "diagn": "diagn_Cardiomyopathy",
+      "recethcat": "recethcat_Caucasian"
+    },
+    "category_integer_mapping": {
+      "diagn": {
+        "0": "diagn_Cardiomyopathy",
+        "1": "diagn_CAD",
+        "2": "diagn_Congenital",
+        "3": "diagn_Graftfailure",
+        "4": "diagn_Misc",
+        "5": "diagn_Valve"
+      },
+      "recethcat": {
+        "0": "recethcat_Caucasian",
+        "1": "recethcat_African American",
+        "2": "recethcat_Hispanic",
+        "3": "recethcat_Other"
+      }
+    }
+  },
+  "reference_columns": {
+    "dropped_columns": [
+      "diagn_Cardiomyopathy",
+      "recethcat_Caucasian"
+    ],
+    "groups": {
+      "diagn": [
+        "diagn_CAD",
+        "diagn_Congenital",
+        "diagn_Graftfailure",
+        "diagn_Misc",
+        "diagn_Valve"
+      ],
+      "recethcat": [
+        "recethcat_African American",
+        "recethcat_Hispanic",
+        "recethcat_Other"
+      ]
+    },
+    "references": {
+      "diagn": "diagn_Cardiomyopathy",
+      "recethcat": "recethcat_Caucasian"
+    },
+    "strategy": "manual"
+  }
+}

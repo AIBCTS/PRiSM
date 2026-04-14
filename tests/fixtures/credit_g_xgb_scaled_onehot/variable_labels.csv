@@ -1,0 +1,62 @@
+﻿original_name,processed_name,user_label,notes
+target,target,Credit risk (good=1),TARGET VARIABLE
+duration,duration,Duration (months),Original variable
+credit_amount,credit_amount,Credit amount,Original variable
+installment_commitment,installment_commitment,Installment rate,Original variable
+residence_since,residence_since,Present residence since,Original variable
+age,age,Age (years),Original variable
+existing_credits,existing_credits,Number of existing credits,Original variable
+num_dependents,num_dependents,Number of dependents,Original variable
+checking_status,checking_status,Checking account status,One-hot group name (for collapsed plots)
+checking_status,checking_status_0<=X<200,Balance 0-200 DM,One-hot reference (dropped) from checking_status
+checking_status,checking_status_<0,Negative balance,One-hot encoded from checking_status
+checking_status,checking_status_>=200,Balance >= 200 DM,One-hot encoded from checking_status
+checking_status,checking_status_no checking,No checking account,One-hot encoded from checking_status
+credit_history,credit_history,Credit history,One-hot group name (for collapsed plots)
+credit_history,credit_history_all paid,All credits paid,One-hot reference (dropped) from credit_history
+credit_history,credit_history_critical/other existing credit,Critical/other existing credit,One-hot encoded from credit_history
+credit_history,credit_history_delayed previously,Delayed previously,One-hot encoded from credit_history
+credit_history,credit_history_existing paid,Existing credits paid,One-hot encoded from credit_history
+credit_history,credit_history_no credits/all paid,No credits/all paid,One-hot encoded from credit_history
+purpose,purpose,Purpose,One-hot group name (for collapsed plots)
+purpose,purpose_business,Business,One-hot reference (dropped) from purpose
+purpose,purpose_domestic appliance,Domestic appliance,One-hot encoded from purpose
+purpose,purpose_education,Education,One-hot encoded from purpose
+purpose,purpose_furniture/equipment,Furniture/equipment,One-hot encoded from purpose
+purpose,purpose_new car,New car,One-hot encoded from purpose
+purpose,purpose_other,Other purpose,One-hot encoded from purpose
+purpose,purpose_radio/tv,Radio/TV,One-hot encoded from purpose
+purpose,purpose_repairs,Repairs,One-hot encoded from purpose
+purpose,purpose_retraining,Retraining,One-hot encoded from purpose
+purpose,purpose_used car,Used car,One-hot encoded from purpose
+savings_status,savings_status_ordinal,Savings account status,Ordinal encoded from savings_status
+employment,employment_ordinal,Employment duration,Ordinal encoded from employment
+personal_status,personal_status,Personal status,One-hot group name (for collapsed plots)
+personal_status,personal_status_female div/dep/mar,Female div/dep/mar,One-hot reference (dropped) from personal_status
+personal_status,personal_status_male div/sep,Male div/sep,One-hot encoded from personal_status
+personal_status,personal_status_male mar/wid,Male mar/wid,One-hot encoded from personal_status
+personal_status,personal_status_male single,Male single,One-hot encoded from personal_status
+other_parties,other_parties,Other parties,One-hot group name (for collapsed plots)
+other_parties,other_parties_co applicant,Co-applicant,One-hot reference (dropped) from other_parties
+other_parties,other_parties_guarantor,Guarantor,One-hot encoded from other_parties
+other_parties,other_parties_none,No other parties,One-hot encoded from other_parties
+property_magnitude,property_magnitude,Property,One-hot group name (for collapsed plots)
+property_magnitude,property_magnitude_car,Car,One-hot reference (dropped) from property_magnitude
+property_magnitude,property_magnitude_life insurance,Life insurance,One-hot encoded from property_magnitude
+property_magnitude,property_magnitude_no known property,No known property,One-hot encoded from property_magnitude
+property_magnitude,property_magnitude_real estate,Real estate,One-hot encoded from property_magnitude
+other_payment_plans,other_payment_plans,Other payment plans,One-hot group name (for collapsed plots)
+other_payment_plans,other_payment_plans_bank,Bank,One-hot reference (dropped) from other_payment_plans
+other_payment_plans,other_payment_plans_none,None,One-hot encoded from other_payment_plans
+other_payment_plans,other_payment_plans_stores,Stores,One-hot encoded from other_payment_plans
+housing,housing,Housing,One-hot group name (for collapsed plots)
+housing,housing_for free,For free,One-hot reference (dropped) from housing
+housing,housing_own,Own,One-hot encoded from housing
+housing,housing_rent,Rent,One-hot encoded from housing
+job,job,Job,One-hot group name (for collapsed plots)
+job,job_high qualif/self emp/mgmt,High qualif/self emp/mgmt,One-hot reference (dropped) from job
+job,job_skilled,Skilled,One-hot encoded from job
+job,job_unemp/unskilled non res,Unemp/unskilled non res,One-hot encoded from job
+job,job_unskilled resident,Unskilled resident,One-hot encoded from job
+own_telephone,own_telephone_ordinal,Own telephone,Ordinal encoded from own_telephone
+foreign_worker,foreign_worker_ordinal,Foreign worker,Ordinal encoded from foreign_worker

@@ -1,0 +1,42 @@
+﻿original_name,processed_name,user_label,notes
+event_oneyear,event_oneyear,One year mortality,TARGET VARIABLE
+recageyear,recageyear,Age (year),Original variable
+recweightkg,recweightkg,Weight (kg),Original variable
+recbilirubin,recbilirubin,"Serum bilirubin
+(umol/L)",Original variable
+donage,donage,Donor age (year),Original variable
+donweight,donweight,Donor weight (kg),Original variable
+donischemictimeminutes,donischemictimeminutes,"Ischemic time
+(minutes)",Original variable
+recsex,recsex,Female gender,Original variable
+recdialysis,recdialysis,Dialysis pre-transplant,Original variable
+rececmo,rececmo,ECMO,Original variable
+recvad,recvad,"Ventricular
+assist device",Original variable
+reciabp,reciabp,"Intra-aortic
+balloon pump",Original variable
+recventilator,recventilator,"Mechanical
+ventilation",Original variable
+donsex,donsex,"Donor
+female gender",Original variable
+recinfections2weeks,recinfections2weeks,"Infection
+within two weeks",Original variable
+creatinine_clearance,creatinine_clearance,"Creatinine clearance
+(umol/L)",Original variable
+diagn,diagn,Diagnosis,One-hot group name (for collapsed plots)
+diagn,diagn_Cardiomyopathy,"Idiopathic
+cardiomyopathy",One-hot reference (dropped) from diagn
+diagn,diagn_CAD,"Ischemic
+cardiomyopathy",One-hot encoded from diagn
+diagn,diagn_Congenital,"Congenital
+heart disease",One-hot encoded from diagn
+diagn,diagn_Graftfailure,Graft failure,One-hot encoded from diagn
+diagn,diagn_Misc,Miscellaneous diagnosis,One-hot encoded from diagn
+diagn,diagn_Valve,"Valvular
+heart disease",One-hot encoded from diagn
+recethcat,recethcat,Ethnicity,One-hot group name (for collapsed plots)
+recethcat,recethcat_Caucasian,Caucasian,One-hot reference (dropped) from recethcat
+recethcat,recethcat_African American,African American,One-hot encoded from recethcat
+recethcat,recethcat_Hispanic,Hispanic,One-hot encoded from recethcat
+recethcat,recethcat_Other,Other,One-hot encoded from recethcat
+UNKNOWN,trr_id_code,Patient ID,Generated variable

@@ -1,0 +1,152 @@
+[build-system]
+requires = ["setuptools>=65", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "prism-xai"
+dynamic = ["version"]
+description = "PRiSM (Partial Responses in Structured Models) is an explainable artificial intelligence (XAI) method designed to transform black-box classifiers into inherently interpretable models without compromising predictive performance. This repository provides user-friendly code to implement PRiSM models, making it accessible for non-experts in machine learning."
+authors = [
+  { name = "Henry Pigot", email = "henry.pigot@med.lu.se" },
+  { name = "Paulo Lisboa" },
+  { name = "Johan Nilsson" },
+]
+
+license = { text = "BSD 3-Clause License" }
+readme = "README.md"
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "License :: OSI Approved :: BSD License",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Scientific/Engineering :: Medical Science Apps.",
+    "Intended Audience :: Science/Research",
+]
+requires-python = ">=3.11"
+
+dependencies = [
+    "numpy>=1.26.4,<2.0",
+    "torch",
+    "pandas",
+    "scikit-learn>=1.5,<2",
+    "xgboost>=3.1,<4",
+    "joblib",
+    "matplotlib",
+    "seaborn",
+    "tableone",
+    "tqdm",
+    "typer",
+    "loguru",
+    "python-dotenv",
+    "pyyaml",
+    "openml",
+    "optuna>=3.0.0",
+]
+
+[project.optional-dependencies]
+notebooks = [
+    "nbconvert",
+    "nbformat",
+    "jupyter",
+    "jupyterlab",
+    "jupytext",
+    "nbautoexport",
+]
+dev = [
+    "prism-xai[notebooks]",
+    "black",
+    "flake8",
+    "isort",
+    "pre-commit",
+    "build",
+    "twine",
+]
+test = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "pytest-mock>=3.10.0",
+    "hypothesis>=6.0.0",
+]
+gpu = [
+    "cupy-cuda12x>=13,<14",  # GPU-optimized XGBoost inference (CUDA 12.x); <14 for numpy<2 compat
+]
+gpu-cuda13x = [
+    "cupy-cuda13x>=13,<14",  # GPU-optimized XGBoost inference (CUDA 13.x, e.g. NGC containers); <14 for numpy<2 compat
+]
+
+[project.scripts]
+prism = "prism.cli.main:app"
+
+# URLs for more information
+[project.urls]
+"Homepage" = "https://github.com/AIBCTS/PRiSM"
+"Source" = "https://github.com/AIBCTS/PRiSM"
+"Bug Tracker" = "https://github.com/AIBCTS/PRiSM/issues"
+
+[tool.black]
+line-length = 99
+skip-string-normalization = true
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.git
+  | \.venv
+)/
+'''
+
+[tool.setuptools.packages.find]
+include = ["prism*"]
+exclude = ["notebooks*", "data*", "venv_prism*", "tests*"]
+
+[tool.setuptools.package-data]
+prism = ["data/*.csv"]
+
+[tool.setuptools.dynamic]
+version = {attr = "prism.__version__.__version__"}
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "--strict-markers",
+    "--strict-config",
+    "-ra",
+]
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "ignore::PendingDeprecationWarning",
+]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: marks tests as integration tests",
+    "unit: marks tests as unit tests",
+]
+
+[tool.coverage.run]
+source = ["prism"]
+omit = [
+    "*/tests/*",
+    "*/example_notebooks/*",
+    "*/__version__.py",
+]
+
+[tool.coverage.report]
+precision = 2
+show_missing = true
+skip_covered = false
+exclude_lines = [
+    "pragma: no cover",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+    "@abstractmethod",
+]
+
+[tool.jupytext]
+# Pair notebooks with py:percent format for easier diffing and editing
+formats = "ipynb,py:percent"

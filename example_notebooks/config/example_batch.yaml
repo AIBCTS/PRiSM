@@ -1,0 +1,17 @@
+# Example batch config file for running multiple configs
+#
+# Usage:
+#   python run_prism_pipeline.py --from-file example_notebooks/config/example_batch.yaml
+#   python run_prism_parallel.py -f example_notebooks/config/example_batch.yaml
+#
+# This file lists config names to run sequentially (pipeline) or in parallel (parallel runner).
+# Each name must correspond to a .yaml file in example_notebooks/config/
+#
+# CLI configs are processed first, then file configs:
+#   python run_prism_pipeline.py extra_config -f batch.yaml
+#   # Runs: extra_config, then configs from batch.yaml
+
+configs:
+  - htx_example
+  # - my_other_config
+  # - openml_31              # OpenML datasets supported via openml_<id> format

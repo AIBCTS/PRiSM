@@ -1,0 +1,76 @@
+# Configuration for htx_example dataset -- SPARSE variant
+#
+# Sparse (non-inferiority) lambda selection at blackbox nomogram step:
+# selects the sparsest lambda whose tuning AUROC remains non-inferior
+#
+# WORKFLOW:
+#   1. First run: python run_hyperparameter_tuning.py htx_example --trials 25
+#   2. Then run: python run_prism_pipeline.py htx_example_sparse
+
+# =============================================================================
+# REQUIRED FIELDS FOR PIPELINE RUNNERS
+# =============================================================================
+dataset: htx_example
+models: [mlp]
+
+# =============================================================================
+# PREPROCESSING SETTINGS
+# =============================================================================
+random_seed: 257
+
+target_candidates: ['event_oneyear']
+id_candidates: ['trr_id_code']
+
+splitting_method: 'temporal'
+time_variable: 'tx_year'
+split_ratios: [0.6, 0.2, 0.2]
+drop_time_variable: true
+
+force_all_ordinal: false
+convert_numeric: true
+categorical_threshold: 8
+invert_target: false
+
+reference_column_strategy: 'manual'
+reference_columns:
+  diagn: 'diagn_Cardiomyopathy'
+  recethcat: 'recethcat_Caucasian'
+
+# ============================================================================
+# PRISM ANALYSIS CONFIGURATION
+# ============================================================================
+partial_response_method: 'lebesgue'
+trim_quantile: 0.01
+save_nomogram_json: true
+save_figs: false
+
+# ============================================================================
+# HYPERPARAMETER TUNING CONFIGURATION
+# ============================================================================
+hyperparameter_tuning:
+  n_jobs: 8
+  metric: 'test_auc'
+  enabled: true
+  n_trials: 32
+  xgb:
+    n_trials: 64
+  rf:
+    n_trials: 64
+  logreg:
+    n_trials: 16
+
+# ============================================================================
+# LASSO Lambda Selection -- SPARSE
+# ============================================================================
+# Non-inferiority selection: sparsest lambda meeting dynamic AUC threshold
+# threshold = max_auc - ni_level * (max_auc - 0.5)
+# e.g., ni_level=0.1 with max_auc=0.80 -> threshold=0.77
+lasso_lambda_selection:
+  blackbox:
+    method: 'non_inferiority'
+    ni_level: 0.1
+    beta_threshold: 0.1
+  prn:
+    method: 'max_test_auc'
+    target_ratio: 0.998
+    beta_threshold: 0.1

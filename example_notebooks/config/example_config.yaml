@@ -1,0 +1,210 @@
+# PRiSM Configuration Reference
+# ==============================
+# Copy this file to {your_config_name}.yaml and modify as needed.
+# See README.md for usage: set PRISM_CONFIG={your_config_name} in .env
+
+# #############################################################################
+# MINIMAL WORKING EXAMPLE (copy-paste ready)
+# #############################################################################
+# Uncomment the block below for a working starting point:
+#
+# dataset: my_dataset
+# models: [mlp]
+# random_seed: 257
+# splitting_method: 'random'
+# split_ratios: [0.6, 0.2, 0.2]
+# target_candidates: ['outcome', 'target', 'y']
+
+
+# #############################################################################
+# REQUIRED FIELDS
+# #############################################################################
+
+# Dataset name - maps to data/raw/{dataset}.csv
+# For OpenML datasets, use: openml_<id> (e.g., openml_31 for credit-g)
+# dataset: my_dataset
+
+# Models to train (used by run_prism_pipeline.py)
+# Options: mlp, xgb, logreg, rf
+# models: [mlp]
+
+
+# #############################################################################
+# PREPROCESSING
+# #############################################################################
+
+# Random seed for reproducibility
+# random_seed: 257
+
+# --- Data Splitting ---
+# splitting_method: 'random'       # 'random', 'temporal', or 'predefined'
+# split_ratios: [0.6, 0.2, 0.2]   # [train, test, validation]
+# time_variable: 'year_column'    # For temporal splitting
+# drop_time_variable: true        # Drop time_variable after split (default: true)
+
+# --- Target and ID Variables ---
+# target_candidates: ['outcome', 'target', 'y', 'label']
+# id_candidates: ['id', 'patient_id', 'subject_id']
+# invert_target: false            # Flip 0<->1
+
+# --- Categorical Encoding ---
+# integer_encoding:               # Ordinal encoding with natural order
+#   education: ['Elementary', 'High School', 'Bachelor', 'Master', 'PhD']
+#   income_level: ['Low', 'Medium', 'High']
+#   has_phone: ['no', 'yes']
+
+# force_all_ordinal: false        # Encode ALL categoricals as ordinal
+# convert_numeric: false          # Apply categorical threshold to numerics
+# categorical_threshold: 12       # Numerics with <=N unique values -> categorical
+
+# --- Reference Column Selection (for one-hot encoding) ---
+# reference_column_strategy: 'alphabetical'  # 'alphabetical', 'most_common', 'manual'
+# reference_columns:              # Required if strategy is 'manual'
+#   diagn: 'diagn_Cardiomyopathy'
+#   recethcat: 'recethcat_Caucasian'
+
+# --- Feature Selection ---
+# selected_features: []           # Empty = use all features
+# selected_features:
+#   - 'age'
+#   - 'income'
+
+
+# #############################################################################
+# PRISM ANALYSIS
+# #############################################################################
+
+# Partial response method: 'lebesgue' (recommended) or 'dirac'
+# partial_response_method: 'lebesgue'
+
+# Memory scaling for partial response calculations
+# If you get out-of-memory errors, lower to e.g. 0.5
+# batch_size_scaler: 1            # Increase for memory-rich systems (2, 4, 8)
+
+# --- Partial Response Caching (PRiSM-Only Mode) ---
+# In prism-only mode, blackbox partial responses are automatically loaded from
+# the source directory to avoid expensive GPU recalculation (can save hours).
+# Partial responses are deterministic: same model + same data = same results.
+# Set to true to force recalculation even when cached values exist.
+# force_recalculate_partial_responses: false
+
+# Trim outliers from plots
+# trim_quantile: null             # null, 0.01, or 0.05
+
+# Output settings
+# save_nomogram_json: true
+# save_figs: true
+
+
+# #############################################################################
+# LASSO LAMBDA SELECTION
+# #############################################################################
+# Controls how LASSO regularization strength is selected.
+# Default: max_test_auc with target_ratio=0.998
+
+# Available methods:
+#   'max_test_auc'    - Highest test AUC (target_ratio: 0.99-0.999)
+#   'non_inferiority' - Sparsest within AUC margin (ni_level: 0.1)
+#   'min_test_auc'    - First lambda exceeding min_auc threshold
+#   'by_features'     - Target specific feature count
+#   'by_index'        - Direct lambda index
+
+# lasso_lambda_selection:
+#   blackbox:
+#     method: 'max_test_auc'
+#     target_ratio: 0.998
+#     beta_threshold: 0.1
+#   prn:
+#     method: 'max_test_auc'
+#     target_ratio: 0.998
+#     beta_threshold: 0.1
+
+# Model-specific overrides (e.g., different settings for MLP vs XGBoost):
+# lasso_lambda_selection:
+#   mlp:
+#     blackbox:
+#       method: 'by_features'
+#       target_features: 10
+#   xgb:
+#     blackbox:
+#       method: 'non_inferiority'
+#       ni_level: 0.1
+
+
+# #############################################################################
+# HYPERPARAMETER TUNING
+# #############################################################################
+# Optuna-based Bayesian optimization. Default: disabled.
+
+# Global settings:
+# hyperparameter_tuning:
+#   enabled: false
+#   n_trials: 20
+#   metric: 'test_auc'            # 'test_auc', 'val_auc', 'accuracy', 'brier'
+#   direction: 'maximize'
+#   pruning_enabled: true
+#   n_jobs: 1                     # Parallel trials (increase for more CPUs)
+
+# Model-specific settings:
+# hyperparameter_tuning:
+#   mlp:
+#     enabled: true
+#     n_trials: 25
+#   xgb:
+#     params_file: 'models/htx_example_xgb_best_params.json'  # Load saved params
+#   prn:
+#     enabled: true               # PRN tuning runs inline during analysis
+#     n_trials: 15
+
+# Tuned parameters by model:
+#   MLP:     n_hidden, lr, weight_decay, patience, batch_size
+#   LogReg:  lr, weight_decay, patience
+#   XGBoost: max_depth, learning_rate, subsample, colsample_bytree, min_child_weight, n_estimators
+#   RF:      n_estimators, max_depth, min_child_weight, subsample, colsample_bytree
+#   PRN:     lr, weight_decay, patience, batch_size
+
+
+# #############################################################################
+# ADVANCED: PIPELINE MODES
+# #############################################################################
+
+# --- Self-Contained Mode ---
+# Copies all data to output folder for complete reproducibility
+# self_contained: true
+
+# --- PRiSM-Only Mode ---
+# Load an existing black-box model and cached partial responses, then re-run
+# PRiSM analysis under different conditions (e.g. alternative lambda selection
+# strategy, different random seed, non-inferiority threshold, etc.).
+# Skips preprocessing and model training entirely.
+#
+# Two ways to specify the source baseline run:
+#
+# 1. prism_only_source_dir  (standalone -- recommended for most use cases)
+#    Points at a completed pipeline output directory on disk. Works regardless
+#    of how or when the baseline was produced.
+#    prism_only_source_dir: 'example_notebooks/pipeline_results/20260115_htx_example'
+#
+# 2. prism_only_source_config  (batch runs only)
+#    References another config processed in the *same* pipeline invocation
+#    (e.g. `python run_prism_pipeline.py baseline_cfg variant_cfg`).
+#    The referenced config MUST appear earlier in that command; running the
+#    variant config alone will raise a validation error.
+#    prism_only_source_config: 'config_full'
+#
+# Blackbox partial responses caching:
+# - Cached blackbox partial responses are automatically copied from the source
+#   directory and loaded during analysis (saves hours of GPU computation)
+# - To force recalculation, set: force_recalculate_partial_responses: true
+# - Validation checks ensure model_identifier and sample counts match
+#
+# PRN caching (for experimenting with PRN lambda selection without retraining):
+# load_cached_prn: false                        # Load trained PRN model from cache
+# force_recalculate_prn_partial_responses: false  # Recalculate PRN partial responses
+# force_recalculate_prn_lasso: false             # Recalculate PRN LASSO sweep
+#
+# When load_cached_prn=true:
+# - PRN model is loaded from cache (skips training)
+# - PRN partial responses loaded if available, else recalculated
+# - PRN LASSO results loaded if available (allows different lambda selection)
+# - Blackbox LASSO lambda config must match source (validated at startup)
