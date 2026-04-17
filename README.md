@@ -4,6 +4,7 @@
 [![Tests](https://github.com/AIBCTS/PRiSM/actions/workflows/tests-quick.yml/badge.svg)](https://github.com/AIBCTS/PRiSM/actions/workflows/tests-quick.yml)
 [![License: BSD 3-Clause](https://img.shields.io/badge/License-BSD_3--Clause-blue.svg)](LICENSE.md)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org/downloads/)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.19632958.svg)](https://doi.org/10.5281/zenodo.19632958)
 
 PRiSM is a **model-agnostic framework that converts any probabilistic binary classifier for tabular data into a globally interpretable nomogram** with little compromise in predictive performance. Using functional ANOVA decomposition, it extracts main effects and pairwise interactions from black-box predictions and compiles them into an additive model that *replaces* the original classifier as the deployed predictor.
 
