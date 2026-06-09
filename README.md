@@ -1,7 +1,6 @@
 # PRiSM - Partial Responses in Structured Models
 
 [![PyPI version](https://img.shields.io/pypi/v/prism-xai.svg)](https://pypi.org/project/prism-xai/)
-[![Tests](https://github.com/AIBCTS/PRiSM/actions/workflows/tests-quick.yml/badge.svg)](https://github.com/AIBCTS/PRiSM/actions/workflows/tests-quick.yml)
 [![License: BSD 3-Clause](https://img.shields.io/badge/License-BSD_3--Clause-blue.svg)](LICENSE.md)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org/downloads/)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.19632958.svg)](https://doi.org/10.5281/zenodo.19632958)

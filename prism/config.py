@@ -1,8 +1,10 @@
+import logging
 import os
 from pathlib import Path
 
 from dotenv import load_dotenv
-from loguru import logger
+
+logger = logging.getLogger(__name__)
 
 # Load environment variables from .env file if it exists
 # BUT only if not already set by pipeline runner (environment vars take precedence)
@@ -18,7 +20,7 @@ PROJ_ROOT = (
     if _proj_root_override
     else Path(__file__).resolve().parents[1]
 )
-logger.info(f"PROJ_ROOT path is: {PROJ_ROOT}")
+logger.debug(f"PROJ_ROOT path is: {PROJ_ROOT}")
 
 DATA_DIR = PROJ_ROOT / "data"
 RAW_DATA_DIR = DATA_DIR / "raw"
@@ -74,28 +76,23 @@ if _config_name:
     _config = _load_config_for_dataset_resolution(_config_name)
     # Dataset can be explicit in YAML, or fallback to config name
     DATASET_PREFIX = _config.get('dataset', _config_name)
-    logger.info(f"Config mode: CONFIG_NAME={CONFIG_NAME}, DATASET_PREFIX={DATASET_PREFIX}")
+    logger.debug(f"Config mode: CONFIG_NAME={CONFIG_NAME}, DATASET_PREFIX={DATASET_PREFIX}")
 elif _dataset_override:
     # Quick mode: just dataset name, no config file required
     CONFIG_NAME = None
     DATASET_PREFIX = _dataset_override
-    logger.info(f"Quick mode: DATASET_PREFIX={DATASET_PREFIX}")
+    logger.debug(f"Quick mode: DATASET_PREFIX={DATASET_PREFIX}")
 else:
     # No .env settings - notebooks will prompt user to set up .env
     # Provide a sensible default for backwards compatibility during transition
     CONFIG_NAME = None
     DATASET_PREFIX = None
-    logger.warning(
+    # Not an error on import: the notebook/pipeline workflow surfaces a clear,
+    # actionable message at point of use via
+    # prism.notebook_utils.validate_dataset_configured(). Kept at debug level so
+    # importing the library (e.g. `from prism.data import load_example_dataset`)
+    # stays quiet for pip-only users who have no .env file.
+    logger.debug(
         "No PRISM_CONFIG or PRISM_DATASET set in .env file. "
         "Copy .env.example to .env and configure your dataset."
     )
-
-# If tqdm is installed, configure loguru with tqdm.write
-# https://github.com/Delgan/loguru/issues/135
-try:
-    from tqdm import tqdm
-
-    logger.remove(0)
-    logger.add(lambda msg: tqdm.write(msg, end=""), colorize=True)
-except ModuleNotFoundError:
-    pass
