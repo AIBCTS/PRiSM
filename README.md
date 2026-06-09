@@ -39,7 +39,7 @@ df = load_example_dataset('htx_example')
 print(df.shape)
 ```
 
-> **Note:** The CLI commands (`prism run`, `prism tune`, etc.) require a cloned repository with notebooks. pip-only installs provide the `prism` library and bundled example datasets.
+> **Which should I use?** `pip install prism-xai` gives you the PRiSM **library** (`import prism`) and the bundled example dataset -- ideal for applying PRiSM to your own data in code. The **config-driven pipeline** (`prism run`, the notebooks, and the `data/`/`models/` directory layout) lives in the repository and is *not* packaged, so **running the end-to-end example pipeline requires a `git clone`**. (Advanced: pip-only users can point PRiSM at a working directory holding their own configs via the `PRISM_PROJECT_DIR` environment variable.)
 
 ---
 
