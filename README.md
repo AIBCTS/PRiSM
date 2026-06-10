@@ -2,7 +2,7 @@
 
 [![PyPI version](https://img.shields.io/pypi/v/prism-xai.svg)](https://pypi.org/project/prism-xai/)
 [![License: BSD 3-Clause](https://img.shields.io/badge/License-BSD_3--Clause-blue.svg)](LICENSE.md)
-[![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org/downloads/)
+[![Python 3.11-3.12](https://img.shields.io/badge/python-3.11--3.12-blue.svg)](https://www.python.org/downloads/)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.19632958.svg)](https://doi.org/10.5281/zenodo.19632958)
 
 PRiSM is a **model-agnostic framework that converts any probabilistic binary classifier for tabular data into a globally interpretable nomogram** with little compromise in predictive performance. Using functional ANOVA decomposition, it extracts main effects and pairwise interactions from black-box predictions and compiles them into an additive model that *replaces* the original classifier as the deployed predictor.
@@ -51,8 +51,9 @@ The fastest way to explore PRiSM using the included heart transplant example dat
 git clone https://github.com/AIBCTS/PRiSM.git
 cd PRiSM
 
-# 2. Create virtual environment (Python >=3.11 required)
+# 2. Create virtual environment (Python 3.11 or 3.12 required; 3.13+ not yet supported)
 python -m venv venv_prism
+# Windows: if `python` isn't 3.11/3.12, create with the launcher instead: py -3.12 -m venv venv_prism
 # Windows: .\venv_prism\Scripts\activate
 # Linux/Mac: source venv_prism/bin/activate
 
