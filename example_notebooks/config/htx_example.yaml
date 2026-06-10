@@ -47,9 +47,11 @@ reference_columns:
 # These settings control the PRiSM analysis notebook behavior
 
 # Partial response calculation method
-# - 'lebesgue': Integration over feature distributions (default, recommended)
-# - 'dirac': Point-mass evaluation at observed values
-partial_response_method: 'lebesgue'
+# - 'lebesgue': Integration over feature distributions (most accurate,
+#   recommended for real analyses; cost scales with row count)
+# - 'dirac': Point-mass evaluation at reference values (fast, row-count
+#   independent; keeps this 10k-row demo quick on CPU)
+partial_response_method: 'dirac'
 
 # Trim quantile for plot variable ranges
 # - null: No trimming (show full range)
@@ -69,7 +71,8 @@ save_figs: false
 hyperparameter_tuning:
   n_jobs: 8
   metric: 'test_auc'
-  enabled: true
+  enabled: false  # off by default: fast, deterministic first run
+  # set enabled: true to tune via Optuna (slower)
   n_trials: 32
   xgb:
     n_trials: 64

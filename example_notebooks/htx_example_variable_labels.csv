@@ -1,0 +1,30 @@
+original_name,processed_name,user_label,notes
+event_oneyear,event_oneyear,One-year mortality,TARGET VARIABLE
+recageyear,recageyear,Recipient age (years),Original variable
+recweightkg,recweightkg,Recipient weight (kg),Original variable
+recbilirubin,recbilirubin,Recipient serum bilirubin (umol/L),Original variable
+donage,donage,Donor age (years),Original variable
+donweight,donweight,Donor weight (kg),Original variable
+donischemictimeminutes,donischemictimeminutes,Ischemic time (minutes),Original variable
+recsex,recsex,Recipient sex,Original variable
+recdialysis,recdialysis,Recipient on dialysis,Original variable
+rececmo,rececmo,Recipient extracorporeal membrane oxygenation (ECMO),Original variable
+recvad,recvad,Recipient ventricular assist device (VAD),Original variable
+reciabp,reciabp,Recipient intra-aortic balloon pump (IABP),Original variable
+recventilator,recventilator,Recipient on ventilator,Original variable
+donsex,donsex,Donor sex,Original variable
+recinfections2weeks,recinfections2weeks,Recipient infection within 2 weeks,Original variable
+creatinine_clearance,creatinine_clearance,Creatinine clearance (mL/min),Original variable
+diagn,diagn,Primary cardiac diagnosis,One-hot group name (for collapsed plots)
+diagn,diagn_Cardiomyopathy,Cardiomyopathy,One-hot reference (dropped) from diagn
+diagn,diagn_CAD,Ischemic cardiomyopathy,One-hot encoded from diagn
+diagn,diagn_Congenital,Congenital heart disease,One-hot encoded from diagn
+diagn,diagn_Graftfailure,Graft failure,One-hot encoded from diagn
+diagn,diagn_Misc,Other diagnosis,One-hot encoded from diagn
+diagn,diagn_Valve,Valvular heart disease,One-hot encoded from diagn
+recethcat,recethcat,Recipient ethnicity,One-hot group name (for collapsed plots)
+recethcat,recethcat_Caucasian,Caucasian,One-hot reference (dropped) from recethcat
+recethcat,recethcat_African American,African American,One-hot encoded from recethcat
+recethcat,recethcat_Hispanic,Hispanic,One-hot encoded from recethcat
+recethcat,recethcat_Other,Other ethnicity,One-hot encoded from recethcat
+NONE,trr_id_code,Patient ID,Generated unique ID variable

@@ -67,6 +67,16 @@ cp .env.example .env
 #    preprocessing.ipynb -> modelling/train_mlp.ipynb -> prism_analysis.ipynb
 ```
 
+> **Note on the example config (speed vs. accuracy):** the bundled `htx_example` config (10,000 rows)
+> is tuned for a fast first run -- about 5 minutes on CPU. It disables hyperparameter tuning and uses
+> the `dirac` partial-response method by default. `dirac` is a faster approximation that evaluates each
+> partial response at reference values and so ignores correlations between features; it is **less
+> accurate than `lebesgue`**, which integrates over the feature distribution. **The published study
+> uses `lebesgue`**, and it is the recommended method for real analyses. For a full-fidelity run that
+> matches the study, set `hyperparameter_tuning.enabled: true` and `partial_response_method: 'lebesgue'`
+> in `example_notebooks/config/htx_example.yaml` (expect tens of minutes on CPU; a CUDA GPU helps
+> substantially).
+
 > **Important:** If you change `.env`, restart your Jupyter kernel for changes to take effect.
 
 ---
@@ -244,7 +254,7 @@ Both the `prism` CLI and the legacy `python run_*.py` scripts are supported:
 See the [Pipeline Usage Guide](docs/PIPELINE_USAGE.md) for multi-GPU execution, PRiSM-only mode, batch runs, caching, output structure, and other advanced workflows.
 
 ```bash
-prism run htx_example                       # Run full pipeline
+prism run htx_example                       # Run full pipeline (~5 min on CPU with default config)
 prism run htx_example my_config             # Multiple configs
 prism run htx_example --skip-preprocessing  # Use existing preprocessed data
 prism list-configs                          # List available configs
@@ -277,7 +287,11 @@ integer_encoding:
   education: ['Elementary', 'High School', 'Bachelor', 'Master', 'PhD']
 
 # PRiSM analysis
-partial_response_method: 'lebesgue'  # or 'dirac'
+# 'lebesgue': integrates over the feature distribution; most accurate, used in the
+#             published study, recommended for real analyses (cost scales with rows)
+# 'dirac':    evaluates at reference values; faster but less accurate (ignores
+#             feature correlations). Used by the htx_example demo config for speed.
+partial_response_method: 'lebesgue'
 save_nomogram_json: true
 
 # LASSO lambda selection
