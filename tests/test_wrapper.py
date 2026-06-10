@@ -38,7 +38,7 @@ class TestSklearnWrapper:
         """Test predict method with numpy array input."""
         x = np.array([[0, 0], [3, 3]])
 
-        predictions = wrapped_model.predict(x)
+        predictions = wrapped_model.predict_proba(x)
 
         # Should return torch tensor
         assert isinstance(predictions, torch.Tensor)
@@ -51,7 +51,7 @@ class TestSklearnWrapper:
         """Test predict method with torch tensor input."""
         x = torch.tensor([[0.0, 0.0], [3.0, 3.0]])
 
-        predictions = wrapped_model.predict(x)
+        predictions = wrapped_model.predict_proba(x)
 
         # Should return torch tensor
         assert isinstance(predictions, torch.Tensor)
@@ -74,7 +74,7 @@ class TestSklearnWrapper:
         """Test that predict() and __call__() return same results."""
         x = np.array([[1, 1], [2, 2]])
 
-        predictions1 = wrapped_model.predict(x)
+        predictions1 = wrapped_model.predict_proba(x)
         predictions2 = wrapped_model(x)
 
         torch.testing.assert_close(predictions1, predictions2)
@@ -83,7 +83,7 @@ class TestSklearnWrapper:
         """Test prediction with single sample."""
         x = np.array([[1, 1]])
 
-        predictions = wrapped_model.predict(x)
+        predictions = wrapped_model.predict_proba(x)
 
         assert len(predictions) == 1
         assert 0 <= predictions[0] <= 1
@@ -92,7 +92,7 @@ class TestSklearnWrapper:
         """Test prediction with batch of samples."""
         x = np.array([[0, 0], [1, 1], [2, 2], [3, 3], [4, 4]])
 
-        predictions = wrapped_model.predict(x)
+        predictions = wrapped_model.predict_proba(x)
 
         assert len(predictions) == 5
         assert all(0 <= p <= 1 for p in predictions)
@@ -102,8 +102,8 @@ class TestSklearnWrapper:
         x_numpy = np.array([[1.234, 2.345], [3.456, 4.567]])
         x_torch = torch.tensor(x_numpy, dtype=torch.float32)
 
-        predictions_numpy = wrapped_model.predict(x_numpy)
-        predictions_torch = wrapped_model.predict(x_torch)
+        predictions_numpy = wrapped_model.predict_proba(x_numpy)
+        predictions_torch = wrapped_model.predict_proba(x_torch)
 
         # Should produce same results regardless of input type
         torch.testing.assert_close(predictions_numpy, predictions_torch)
@@ -112,8 +112,8 @@ class TestSklearnWrapper:
         """Test that predictions are deterministic."""
         x = np.array([[1, 1], [2, 2]])
 
-        predictions1 = wrapped_model.predict(x)
-        predictions2 = wrapped_model.predict(x)
+        predictions1 = wrapped_model.predict_proba(x)
+        predictions2 = wrapped_model.predict_proba(x)
 
         torch.testing.assert_close(predictions1, predictions2)
 
@@ -122,7 +122,7 @@ class TestSklearnWrapper:
         """Test predict with CUDA tensor (if available)."""
         x = torch.tensor([[1.0, 1.0], [2.0, 2.0]]).cuda()
 
-        predictions = wrapped_model.predict(x)
+        predictions = wrapped_model.predict_proba(x)
 
         # Should work and return torch tensor
         assert isinstance(predictions, torch.Tensor)
@@ -174,7 +174,7 @@ class TestSklearnWrapperGPUDetection:
     def test_predict_cpu_path_with_cpu_model(self, xgb_cpu_model):
         wrapper = SklearnWrapper(xgb_cpu_model)
         X = torch.tensor([[0.0, 0.0], [3.0, 3.0]])
-        result = wrapper.predict(X)
+        result = wrapper.predict_proba(X)
         assert isinstance(result, torch.Tensor)
         assert len(result) == 2
         assert all(0 <= p <= 1 for p in result)
@@ -187,7 +187,7 @@ class TestSklearnWrapperGPUDetection:
         wrapper.refresh_gpu_detection()
 
         X = torch.tensor([[0.0, 0.0], [3.0, 3.0]], device='cuda')
-        result = wrapper.predict(X, device='cuda')
+        result = wrapper.predict_proba(X, device='cuda')
         assert isinstance(result, torch.Tensor)
         assert len(result) == 2
 
@@ -206,8 +206,8 @@ class TestSklearnWrapperGPUDetection:
         X_cpu = torch.tensor(X_np, dtype=torch.float32)
         X_cuda = X_cpu.cuda()
 
-        result_cpu = wrapper_cpu.predict(X_cpu)
-        result_gpu = wrapper_gpu.predict(X_cuda, device='cuda').cpu()
+        result_cpu = wrapper_cpu.predict_proba(X_cpu)
+        result_gpu = wrapper_gpu.predict_proba(X_cuda, device='cuda').cpu()
 
         torch.testing.assert_close(result_cpu, result_gpu, atol=1e-5, rtol=1e-5)
 

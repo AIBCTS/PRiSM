@@ -63,12 +63,12 @@ class TestMixedBivariateRendering:
         """Simple mock model."""
 
         class SimpleModel:
-            def predict(self, x, device='cpu'):
+            def predict_proba(self, x, device='cpu'):
                 batch_size = x.shape[0] if hasattr(x, 'shape') else len(x)
                 return torch.ones(batch_size, 1, device=device) * 0.5
 
             def __call__(self, x):
-                return self.predict(x)
+                return self.predict_proba(x)
 
         return SimpleModel()
 
@@ -260,12 +260,12 @@ class TestMixedBivariateEdgeCases:
         """Simple mock model."""
 
         class SimpleModel:
-            def predict(self, x, device='cpu'):
+            def predict_proba(self, x, device='cpu'):
                 batch_size = x.shape[0] if hasattr(x, 'shape') else len(x)
                 return torch.ones(batch_size, 1, device=device) * 0.5
 
             def __call__(self, x):
-                return self.predict(x)
+                return self.predict_proba(x)
 
         return SimpleModel()
 

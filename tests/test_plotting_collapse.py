@@ -181,7 +181,7 @@ class TestPlottingIntegration:
         X_test_tensor = torch.tensor(X_test_scaled, dtype=torch.float32)
 
         # Verify model works
-        y_pred_train = model.predict(X_train_tensor)
+        y_pred_train = model.predict_proba(X_train_tensor)
         train_acc = ((y_pred_train.numpy() > 0.5).astype(int) == y_train).mean()
         print("\n=== MODEL TRAINING ===")
         print("Model: LogisticRegression (wrapped)")

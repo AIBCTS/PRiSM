@@ -1,8 +1,8 @@
 """
-Wrapper classes to provide a unified predict interface for sklearn-style models.
+Wrapper classes to provide a unified predict_proba interface for sklearn-style models.
 
 This module provides SklearnWrapper which wraps sklearn-compatible models
-(XGBoost, RandomForest, etc.) to match the PyTorch-style predict API used
+(XGBoost, RandomForest, etc.) to match the PyTorch-style predict_proba API used
 by MaskedMLP and other PRiSM models.
 
 GPU Optimization
@@ -16,6 +16,8 @@ import json
 import logging
 
 import torch
+
+from prism._deprecation import warn_deprecated
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +35,7 @@ class SklearnWrapper:
     """
     Wrapper class to match sklearn models to the MaskedMLP PyTorch API.
 
-    This wrapper provides a unified predict interface that returns PyTorch tensors,
+    This wrapper provides a unified predict_proba interface that returns PyTorch tensors,
     enabling sklearn-compatible models (XGBoost, RandomForest, etc.) to be used
     interchangeably with PyTorch models in the PRiSM pipeline.
 
@@ -62,7 +64,7 @@ class SklearnWrapper:
     >>>
     >>> # Predict with CUDA tensors - stays on GPU
     >>> X_cuda = torch.tensor(X_test, device='cuda')
-    >>> probs = model.predict(X_cuda, device='cuda')
+    >>> probs = model.predict_proba(X_cuda, device='cuda')
     """
 
     def __init__(self, model):
@@ -178,12 +180,18 @@ class SklearnWrapper:
 
         return result.to(dtype=torch.float32, device=target_device)
 
-    def predict(self, X, device=None):
+    def predict_proba(self, X, device=None):
         """
-        Make predictions and return probabilities as a PyTorch tensor.
+        Probability of the positive class as a PyTorch tensor.
 
         For GPU-enabled XGBoost models with CUDA input tensors, this method
         uses optimized GPU inference to avoid CPU data transfers.
+
+        Note: this intentionally SHADOWS the wrapped sklearn model's own
+        predict_proba. The inner model returns an (n, 2) numpy array; this
+        wrapper returns a torch tensor with only the positive-class column,
+        matching the PRiSM model convention. The inner model's original
+        method remains reachable via ``wrapper.model.predict_proba``.
 
         Parameters
         ----------
@@ -195,7 +203,7 @@ class SklearnWrapper:
         Returns
         -------
         torch.Tensor
-            Probability of positive class for each sample
+            Probability of positive class for each sample, shape (n_samples,)
         """
         if device is None:
             device = torch.device('cpu')
@@ -229,6 +237,11 @@ class SklearnWrapper:
         result = self.model.predict_proba(X)[:, 1]
         return torch.tensor(result, dtype=torch.float32, device=device)
 
+    def predict(self, X, device=None):
+        """Deprecated alias for predict_proba (returns probabilities, not class labels)."""
+        warn_deprecated("SklearnWrapper.predict", "predict_proba")
+        return self.predict_proba(X, device)
+
     def __call__(self, X):
         """
         Callable interface for predictions.
@@ -249,4 +262,4 @@ class SklearnWrapper:
         else:
             output_device = torch.device('cpu')
 
-        return self.predict(X, device=output_device)
+        return self.predict_proba(X, device=output_device)

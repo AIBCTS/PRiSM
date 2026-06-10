@@ -1067,7 +1067,7 @@ class LebesgueMixin:
             else:
                 x_input[:, i] = x_subset
 
-            y_i = self.predict(x_input)
+            y_i = self.predict_proba(x_input)
             response = stable_logit(y_i) - self.logit_y0
             univariate_responses[i] = response
 
@@ -1152,7 +1152,7 @@ class LebesgueMixin:
             else:
                 x_input[:, j] = x_ij[:, 1]
 
-            y_ij = self.predict(x_input)
+            y_ij = self.predict_proba(x_input)
             bivariate_response = stable_logit(y_ij) - self.logit_y0
 
             if subtract_univariate:

@@ -112,7 +112,7 @@ class TestRealisticVisualVerification:
         """Realistic mock model with varied predictions."""
 
         class RealisticModel:
-            def predict(self, x, device='cpu'):
+            def predict_proba(self, x, device='cpu'):
                 # Create realistic predictions based on features
                 batch_size = x.shape[0] if hasattr(x, 'shape') else len(x)
                 if hasattr(x, 'shape') and x.shape[1] > 0:
@@ -134,7 +134,7 @@ class TestRealisticVisualVerification:
                     return torch.ones(batch_size, 1, device=device) * 0.5
 
             def __call__(self, x):
-                return self.predict(x)
+                return self.predict_proba(x)
 
         return RealisticModel()
 

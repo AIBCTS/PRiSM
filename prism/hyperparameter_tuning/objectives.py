@@ -182,7 +182,7 @@ class MLPObjective:
             # Evaluate on test set
             model.eval()
             with torch.no_grad():
-                y_pred = model.predict(self._X_test_t, device=self.device)
+                y_pred = model.predict_proba(self._X_test_t, device=self.device)
 
             # Calculate metric
             score = _evaluate_predictions(self._y_test_t, y_pred, self.tuning_config.metric)
@@ -306,7 +306,7 @@ class LogRegObjective:
             # Evaluate on test set
             model.eval()
             with torch.no_grad():
-                y_pred = model.predict(self._X_test_t, device=self.device)
+                y_pred = model.predict_proba(self._X_test_t, device=self.device)
 
             # Calculate metric
             score = _evaluate_predictions(self._y_test_t, y_pred, self.tuning_config.metric)
@@ -660,7 +660,7 @@ class PRNObjective:
             # Evaluate on test set
             model.eval()
             with torch.no_grad():
-                y_pred = model.predict(self._X_test_t, device=self.device)
+                y_pred = model.predict_proba(self._X_test_t, device=self.device)
 
             # Calculate metric
             score = _evaluate_predictions(self._y_test_t, y_pred, self.tuning_config.metric)

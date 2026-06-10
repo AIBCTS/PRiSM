@@ -75,13 +75,13 @@ class TestCollapseOnehotFeatures:
         )
 
         class MockModel:
-            def predict(self, x, device=None):
+            def predict_proba(self, x, device=None):
                 if isinstance(x, torch.Tensor):
                     return torch.sigmoid(x.sum(dim=1))
                 return torch.sigmoid(torch.tensor(x).sum(dim=1))
 
             def __call__(self, x):
-                return self.predict(x)
+                return self.predict_proba(x)
 
         calculator = PartialResponseCalculator(
             model=MockModel(),
@@ -301,13 +301,13 @@ class TestPipelineIntegration:
                 return np.array([1.0])
 
         class MockModel:
-            def predict(self, x, device=None):
+            def predict_proba(self, x, device=None):
                 if isinstance(x, torch.Tensor):
                     return torch.sigmoid(x.sum(dim=1))
                 return torch.sigmoid(torch.tensor(x).sum(dim=1))
 
             def __call__(self, x):
-                return self.predict(x)
+                return self.predict_proba(x)
 
         pipeline = PlottingPipeline(
             lasso_results=MockLasso(collapsed_names),
@@ -384,13 +384,13 @@ class TestPipelineIntegration:
                 return np.array([1.0])
 
         class MockModel:
-            def predict(self, x, device=None):
+            def predict_proba(self, x, device=None):
                 if isinstance(x, torch.Tensor):
                     return torch.sigmoid(x.sum(dim=1))
                 return torch.sigmoid(torch.tensor(x).sum(dim=1))
 
             def __call__(self, x):
-                return self.predict(x)
+                return self.predict_proba(x)
 
         pipeline = PlottingPipeline(
             lasso_results=MockLasso(collapsed_names),

@@ -46,7 +46,7 @@ class MockBinaryClassifier:
         # Create simple linear weights
         self.weights = np.linspace(0.1, 1.0, n_features)
 
-    def predict(self, x, device=None):
+    def predict_proba(self, x, device=None):
         """Predict probabilities.
 
         Parameters
@@ -81,7 +81,7 @@ class MockBinaryClassifier:
 
     def __call__(self, x):
         """Make model callable."""
-        return self.predict(x)
+        return self.predict_proba(x)
 
 
 @pytest.fixture
@@ -385,7 +385,7 @@ class LinearTestModel(torch.nn.Module):
         # Return probabilities
         return torch.sigmoid(logits)
 
-    def predict(self, x, device=None):
+    def predict_proba(self, x, device=None):
         """Predict probabilities (wrapper for forward).
 
         Parameters
@@ -461,7 +461,7 @@ class InteractionTestModel(torch.nn.Module):
 
         return torch.sigmoid(logits)
 
-    def predict(self, x, device=None):
+    def predict_proba(self, x, device=None):
         """Predict probabilities (wrapper for forward).
 
         Parameters
@@ -519,7 +519,7 @@ class TestMLP(torch.nn.Module):
         x = self.fc2(x)
         return torch.sigmoid(x).squeeze()
 
-    def predict(self, x, device=None):
+    def predict_proba(self, x, device=None):
         """Predict probabilities (wrapper for forward).
 
         Parameters

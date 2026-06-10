@@ -40,7 +40,7 @@ class MockLinearModelWithOnehot:
         self.coefficients = torch.tensor(coefficients, dtype=torch.float32)
         self.intercept = intercept
 
-    def predict(self, x, device='cpu'):
+    def predict_proba(self, x, device='cpu'):
         """Return probability predictions."""
         x = x.to(device) if isinstance(x, torch.Tensor) else torch.tensor(x, device=device)
         logits = x @ self.coefficients + self.intercept
@@ -231,7 +231,7 @@ class TestDiracBaselineConsistency:
 
         # Continuous columns: check they have expected scaled_0 value
         # (will be 0 for columns with median=0, may be non-zero otherwise)
-        expected_y0 = model.predict(x0)
+        expected_y0 = model.predict_proba(x0)
         expected_logit_y0 = stable_logit(expected_y0).item()
 
         # Baseline should match expected
@@ -288,7 +288,7 @@ class TestDiracReconstructionWithOnehot:
         univariate, bivariate = calculator.calculate(X_tensor)
 
         # Get true predictions
-        y_pred = model.predict(X_tensor)
+        y_pred = model.predict_proba(X_tensor)
         logit_pred = stable_logit(y_pred)
 
         # Reconstruct
@@ -361,7 +361,7 @@ class TestDiracReconstructionWithOnehot:
         univ_lebesgue, biv_lebesgue = calc_lebesgue.calculate(X_tensor)
 
         # Both should reconstruct the same predictions
-        y_pred = model.predict(X_tensor)
+        y_pred = model.predict_proba(X_tensor)
         logit_pred = stable_logit(y_pred)
 
         recon_dirac = calc_dirac.logit_y0 + univ_dirac.sum(dim=1) + biv_dirac.sum(dim=1)

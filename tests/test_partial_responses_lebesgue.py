@@ -560,7 +560,7 @@ class TestBatchedPredict:
             predict_batch_size=100,
         )
 
-        expected = calculator.predict(x_test)
+        expected = calculator.predict_proba(x_test)
         actual = calculator._batched_predict(x_test)
 
         assert torch.allclose(
@@ -581,7 +581,7 @@ class TestBatchedPredict:
             predict_batch_size=1000,
         )
 
-        expected = calculator.predict(x_test)
+        expected = calculator.predict_proba(x_test)
         actual = calculator._batched_predict(x_test)
 
         assert torch.allclose(expected, actual, atol=1e-6)
@@ -630,7 +630,7 @@ class TestBatchedPredict:
             predict_batch_size=100,
         )
 
-        expected = calculator.predict(x_test)
+        expected = calculator.predict_proba(x_test)
         actual = calculator._batched_predict(x_test)
 
         assert torch.allclose(expected, actual, atol=1e-6)
@@ -649,7 +649,7 @@ class TestBatchedPredict:
             predict_batch_size=100,
         )
 
-        expected = calculator.predict(x_test)
+        expected = calculator.predict_proba(x_test)
         actual = calculator._batched_predict(x_test)
 
         assert torch.allclose(expected, actual, atol=1e-6)

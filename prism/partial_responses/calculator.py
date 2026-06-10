@@ -14,6 +14,7 @@ from typing import Any, Dict, List, Optional, Tuple
 import numpy as np
 import torch
 
+from prism._deprecation import warn_deprecated
 from prism.device_tools import _free_all_gpu_caches, device_empty_cache
 
 from .lebesgue import LebesgueMixin, get_variable_range
@@ -280,7 +281,7 @@ class PartialResponseCalculator(LebesgueMixin):
                 dummy_input = x_train[:1].to(self.device)
 
             # Attempt to make a prediction
-            _ = self.predict(dummy_input)
+            _ = self.predict_proba(dummy_input)
         except Exception as e:
             error_msg = (
                 f"The provided model is not compatible with the predict method. Error: {str(e)}"
@@ -956,9 +957,9 @@ class PartialResponseCalculator(LebesgueMixin):
                     return group
         return None
 
-    def predict(self, x: torch.Tensor) -> torch.Tensor:
+    def predict_proba(self, x: torch.Tensor) -> torch.Tensor:
         """
-        Make predictions using the model.
+        Probability of the positive class from the wrapped model.
 
         Parameters
         ----------
@@ -968,9 +969,14 @@ class PartialResponseCalculator(LebesgueMixin):
         Returns
         -------
         torch.Tensor
-            Model predictions.
+            P(y=1) per sample, squeezed to shape (n_samples,).
         """
-        return self.model.predict(x, device=self.device).squeeze()
+        return self.model.predict_proba(x, device=self.device).squeeze()
+
+    def predict(self, x: torch.Tensor) -> torch.Tensor:
+        """Deprecated alias for predict_proba (returns probabilities, not class labels)."""
+        warn_deprecated("PartialResponseCalculator.predict", "predict_proba")
+        return self.predict_proba(x)
 
     @staticmethod
     def _estimate_bytes_per_row(model) -> int:
@@ -1058,21 +1064,21 @@ class PartialResponseCalculator(LebesgueMixin):
         """Predict in chunks to avoid GPU OOM with large models.
 
         Splits x into sub-batches of self.predict_batch_size rows,
-        runs predict on each, and concatenates results. Calls
+        runs predict_proba on each, and concatenates results. Calls
         _free_all_gpu_caches() between sub-batches to release
         intermediate activation memory.
 
-        Mathematically identical to self.predict(x) -- predictions
+        Mathematically identical to self.predict_proba(x) -- predictions
         are independent across rows.
         """
         n_rows = x.shape[0]
         if n_rows <= self.predict_batch_size:
-            return self.predict(x)
+            return self.predict_proba(x)
 
         chunks = []
         for start in range(0, n_rows, self.predict_batch_size):
             end = min(start + self.predict_batch_size, n_rows)
-            chunks.append(self.predict(x[start:end]))
+            chunks.append(self.predict_proba(x[start:end]))
             _free_all_gpu_caches()
         return torch.cat(chunks, dim=0)
 
@@ -1112,11 +1118,11 @@ class PartialResponseCalculator(LebesgueMixin):
             #   reference category value)
             # - Continuous columns: scaled_0 (corresponding to median value)
             x0 = self._create_baseline_input(1, self.input_dim)
-            y0 = self.predict(x0)
+            y0 = self.predict_proba(x0)
             self.logit_y0 = stable_logit(y0).item()
             logger.debug(f"Baseline logit (Dirac method): {self.logit_y0:.6f}")
         else:  # lebesgue
-            y0 = self.predict(x)
+            y0 = self.predict_proba(x)
             self.logit_y0 = stable_logit(y0).mean().item()
             logger.debug(f"Baseline logit (Lebesgue method): {self.logit_y0:.6f}")
 
@@ -1320,7 +1326,7 @@ class PartialResponseCalculator(LebesgueMixin):
             x_i[:, i] = x[:, i]
 
             # Calculate the model's output and convert to log-odds
-            y_i = self.predict(x_i)
+            y_i = self.predict_proba(x_i)
             univariate_responses[:, i] = stable_logit(y_i) - self.logit_y0
 
         # Calculate bivariate responses
@@ -1333,7 +1339,7 @@ class PartialResponseCalculator(LebesgueMixin):
                 x_input[:, j] = x[:, j]
 
                 # Calculate the model's output and convert to log-odds
-                y_ij = self.predict(x_input)
+                y_ij = self.predict_proba(x_input)
 
                 # Calculate isolated bivariate response by subtracting baseline and univariate responses
                 bivariate_response = (

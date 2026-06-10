@@ -777,5 +777,5 @@ class TestSaveLoadBestModel:
 
             # Verify loaded model can make predictions
             loaded_model = checkpoint['model']
-            preds = loaded_model.predict(torch.tensor(X_test))
+            preds = loaded_model.predict_proba(torch.tensor(X_test))
             assert len(preds) == len(y_test)

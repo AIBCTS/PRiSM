@@ -58,7 +58,7 @@ class MockModel:
     def __init__(self, input_dim):
         self.input_dim = input_dim
 
-    def predict(self, x, device=None):
+    def predict_proba(self, x, device=None):
         # Simple interaction model
         # GroupA (0-2), GroupB (3-4), ContC (5), ContD (6)
 
@@ -240,7 +240,7 @@ class TestPlottingIntegration(unittest.TestCase):
 
         # Mock model for 2 inputs
         class MockModelCont:
-            def predict(self, x, device=None):
+            def predict_proba(self, x, device=None):
                 return torch.sigmoid(x[:, 0] + x[:, 1])
 
             def parameters(self):

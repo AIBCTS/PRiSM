@@ -95,11 +95,11 @@ class TestMaskedMLP:
         assert output.shape == (16, 1)
         assert torch.all((output >= 0) & (output <= 1))  # sigmoid output
 
-    def test_predict_numpy(self):
-        """Test predict method with numpy array."""
+    def test_predict_proba_numpy_input(self):
+        """Test predict_proba method with numpy array."""
         model = MaskedMLP(input_dim=5, hidden_units=10, output_dim=1)
         x = np.random.randn(16, 5)
-        output = model.predict(x)
+        output = model.predict_proba(x)
 
         assert isinstance(output, torch.Tensor)
         assert output.shape == (16, 1)

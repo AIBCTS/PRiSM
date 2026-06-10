@@ -1,6 +1,8 @@
 import torch
 import torch.nn as nn
 
+from prism._deprecation import warn_deprecated
+
 
 # Logistic Regression class using PyTorch
 class LogisticRegression(nn.Module):
@@ -22,7 +24,8 @@ class LogisticRegression(nn.Module):
         logits = self.linear(x)
         return logits.squeeze()  # No sigmoid here for training with BCEWithLogitsLoss
 
-    def predict(self, X, device=None):
+    def predict_proba(self, X, device=None):
+        """Probability of the positive class P(y=1) as a torch tensor."""
         # Handle device parameter
         if device is None:
             device = next(self.parameters()).device
@@ -37,6 +40,11 @@ class LogisticRegression(nn.Module):
         with torch.no_grad():
             # Return probabilities (0-1) by applying sigmoid to the logits
             return torch.sigmoid(self.forward(X))
+
+    def predict(self, X, device=None):
+        """Deprecated alias for predict_proba (returns probabilities, not class labels)."""
+        warn_deprecated("LogisticRegression.predict", "predict_proba")
+        return self.predict_proba(X, device)
 
     def get_logits(self, X, device=None):
         """Helper method to get raw logits when needed"""

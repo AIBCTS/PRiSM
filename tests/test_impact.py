@@ -78,7 +78,7 @@ class TestIMPACTModel:
 
     def test_predict_returns_probabilities(self, impact_model):
         x = torch.rand(10, 18)
-        probs = impact_model.predict(x)
+        probs = impact_model.predict_proba(x)
         assert probs.shape == (10,)
         assert (probs >= 0).all() and (probs <= 1).all()
 
@@ -89,7 +89,7 @@ class TestIMPACTModel:
         so the logit is intercept + creat_under_30 = -2.75 + 0.8961.
         """
         x = torch.zeros(1, 18)
-        prob = impact_model.predict(x).item()
+        prob = impact_model.predict_proba(x).item()
         expected = torch.sigmoid(torch.tensor(-2.75 + 0.8961)).item()
         assert abs(prob - expected) < 1e-5
 

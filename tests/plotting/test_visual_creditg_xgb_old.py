@@ -678,7 +678,7 @@ class TestXGBOldScaler:
         # Category 3: third column = 1
         x_test[3, col_indices[2]] = 1.0
 
-        predictions = blackbox_model.predict(x_test, device='cpu')
+        predictions = blackbox_model.predict_proba(x_test, device='cpu')
 
         logger.info("\nPredictions (UNSCALED 0/1 values):")
         for i in range(4):

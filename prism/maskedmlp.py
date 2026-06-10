@@ -47,7 +47,7 @@ Example usage
 >>> lasso_results = lasso(...)  # Assume this is already performed
 >>> mask = lasso_results.get_mask()
 >>> model = train_mlp(x_train, y_train, x_test, y_test, n_hidden=50, mask=mask)
->>> predictions = model.predict(x_new)
+>>> probabilities = model.predict_proba(x_new)
 
 See individual function and class docstrings for more detailed information.
 """
@@ -72,6 +72,8 @@ import torch.nn as nn
 import torch.nn.init as init
 import torch.optim as optim
 from sklearn.metrics import roc_auc_score
+
+from prism._deprecation import warn_deprecated
 
 # Setup logging for training progress
 logger = logging.getLogger(__name__)
@@ -171,11 +173,11 @@ class MaskedMLP(nn.Module):
         return torch.sigmoid(x)
 
     @torch.no_grad()
-    def predict(
+    def predict_proba(
         self, x: Union[np.ndarray, pd.DataFrame, torch.Tensor], device: Optional[str] = None
     ) -> torch.Tensor:
         """
-        Make predictions using the trained model.
+        Probability of the positive class for each sample.
 
         This method sets the model to evaluation mode and performs a forward pass
         without computing gradients.
@@ -190,13 +192,14 @@ class MaskedMLP(nn.Module):
         Returns
         -------
         torch.Tensor
-            The model's predictions.
+            P(y=1) per sample, shape (n_samples, 1).
 
         Notes
         -----
         - The input is automatically converted to a PyTorch tensor if it isn't already.
         - The output is returned on the same device as the input.
-        - TODO: this function currently returns the probability. It should be renamed to predict_proba() to indicate this, and another function for making binary predictions should be made.
+        - Unlike sklearn's predict_proba, this returns a torch tensor with only the
+          positive-class column (the pipeline is torch-first and device-aware).
         """
         self.eval()
 
@@ -225,15 +228,33 @@ class MaskedMLP(nn.Module):
 
         return outputs  # Return on the same device as input
 
+    def predict(
+        self, x: Union[np.ndarray, pd.DataFrame, torch.Tensor], device: Optional[str] = None
+    ) -> torch.Tensor:
+        """
+        Deprecated alias for predict_proba (returns probabilities, not class labels).
+        """
+        warn_deprecated("MaskedMLP.predict", "predict_proba")
+        return self.predict_proba(x, device)
+
     @torch.no_grad()
+    def predict_proba_numpy(
+        self, x: Union[np.ndarray, pd.DataFrame], device: Optional[str] = None
+    ) -> np.ndarray:
+        """
+        This method is a wrapper around the `predict_proba` method that automatically
+        converts the output to a NumPy array.
+        """
+        return self.predict_proba(x, device).cpu().numpy()
+
     def predict_numpy(
         self, x: Union[np.ndarray, pd.DataFrame], device: Optional[str] = None
     ) -> np.ndarray:
         """
-        This method is a wrapper around the `predict` method that automatically
-        converts the output to a NumPy array.
+        Deprecated alias for predict_proba_numpy (returns probabilities, not class labels).
         """
-        return self.predict(x, device).cpu().numpy()
+        warn_deprecated("MaskedMLP.predict_numpy", "predict_proba_numpy")
+        return self.predict_proba_numpy(x, device)
 
 
 def apply_mask(model):

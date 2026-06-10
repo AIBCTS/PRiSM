@@ -39,7 +39,7 @@ class LinearTestModel(torch.nn.Module):
         logits = torch.matmul(x, self.coefficients) + self.bias
         return torch.sigmoid(logits)
 
-    def predict(self, x, device=None):
+    def predict_proba(self, x, device=None):
         if device is not None:
             x = x.to(device)
             self.to(device)

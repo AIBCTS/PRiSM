@@ -621,7 +621,7 @@ class TestOneHotEncodedPartialResponses:
         x_modified[:, 0] = 0
         x_modified[:, 1] = 0
 
-        y_pred = calculator.predict(x_modified)
+        y_pred = calculator.predict_proba(x_modified)
         expected_response = stable_logit(y_pred).mean() - calculator.logit_y0
 
         # Reference response should match the manual calculation
@@ -721,7 +721,7 @@ class TestPartialResponseCalculatorPredict:
             method='dirac',
         )
 
-        predictions = calculator.predict(small_tensor_2d)
+        predictions = calculator.predict_proba(small_tensor_2d)
 
         # Should return predictions for all samples
         assert predictions.shape == (5,)
@@ -739,7 +739,7 @@ class TestPartialResponseCalculatorPredict:
             device='cpu',
         )
 
-        predictions = calculator.predict(small_tensor_2d)
+        predictions = calculator.predict_proba(small_tensor_2d)
 
         assert predictions.device == torch.device('cpu')
         assert predictions.shape == (5,)
@@ -753,7 +753,7 @@ class TestPartialResponseCalculatorPredict:
         )
 
         x = torch.randn(1, 5)
-        predictions = calculator.predict(x)
+        predictions = calculator.predict_proba(x)
 
         # predict() squeezes the result, so single sample becomes scalar
         assert predictions.ndim == 0 or predictions.shape == (1,)

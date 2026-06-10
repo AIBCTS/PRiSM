@@ -611,7 +611,7 @@ class TestCollapseIntegration:
 
         # Simple mock model
         class SimpleMockModel:
-            def predict(self, x, device=None):
+            def predict_proba(self, x, device=None):
                 return torch.sigmoid(x.mean(dim=1, keepdim=True))
 
         model = SimpleMockModel()
@@ -704,7 +704,7 @@ class TestCollapseIntegration:
 
         # Simple mock model
         class SimpleMockModel:
-            def predict(self, x, device=None):
+            def predict_proba(self, x, device=None):
                 return torch.sigmoid(x.mean(dim=1, keepdim=True))
 
         model = SimpleMockModel()
@@ -808,7 +808,7 @@ class TestCollapseIntegration:
 
         # Now verify PartialResponseCalculator._create_collapsed_mapping uses same order
         class DummyModel:
-            def predict(self, x, device=None):
+            def predict_proba(self, x, device=None):
                 return torch.zeros((x.shape[0], 1))
 
         calc = PartialResponseCalculator(

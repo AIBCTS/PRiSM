@@ -363,7 +363,7 @@ class TestReconstruction:
 
         # Actual model prediction
         with torch.no_grad():
-            y_pred = model.predict(x_test)
+            y_pred = model.predict_proba(x_test)
         logit_pred = stable_logit(y_pred)
 
         # Reconstructed prediction
@@ -407,7 +407,7 @@ class TestReconstruction:
         univariate, bivariate = calculator.calculate(x_test)
 
         with torch.no_grad():
-            y_pred = model.predict(x_test)
+            y_pred = model.predict_proba(x_test)
         logit_pred = stable_logit(y_pred)
 
         logit_reconstructed = calculator.logit_y0 + univariate.sum(dim=1) + bivariate.sum(dim=1)
@@ -526,7 +526,7 @@ class TestBaselineDefinition:
         # Manually compute expected baseline
         x0 = torch.zeros(1, len(feature_names))
         with torch.no_grad():
-            y0 = model.predict(x0)
+            y0 = model.predict_proba(x0)
         expected_logit_y0 = stable_logit(y0).item()
 
         assert abs(calculator.logit_y0 - expected_logit_y0) < 1e-5, (
@@ -552,7 +552,7 @@ class TestBaselineDefinition:
 
         # Manually compute expected baseline
         with torch.no_grad():
-            y_train = model.predict(X)
+            y_train = model.predict_proba(X)
         expected_logit_y0 = stable_logit(y_train).mean().item()
 
         assert abs(calculator.logit_y0 - expected_logit_y0) < 1e-5, (
@@ -636,7 +636,7 @@ class TestIntegrationAcceptanceCriteria:
 
             # Criterion 3: Reconstruction (bounded for MLPs)
             with torch.no_grad():
-                y_pred = model.predict(x_test)
+                y_pred = model.predict_proba(x_test)
             logit_pred = stable_logit(y_pred)
             logit_recon = calculator.logit_y0 + univariate.sum(dim=1) + bivariate.sum(dim=1)
             error = (logit_pred - logit_recon).abs().max().item()

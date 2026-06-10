@@ -6,6 +6,8 @@ import pandas as pd
 import torch
 import torch.nn as nn
 
+from prism._deprecation import warn_deprecated
+
 
 class IMPACTFeatureTransformer(nn.Module):
     """
@@ -317,14 +319,14 @@ class IMPACTModel(nn.Module):
         return result
 
     @torch.no_grad()
-    def predict(
+    def predict_proba(
         self,
         x: Union[np.ndarray, pd.DataFrame, torch.Tensor],
         device: Optional[str] = None,
         calculate_impact_score: bool = False,
     ) -> torch.Tensor:
         """
-        Make predictions using the trained model.
+        Mortality probability (positive class) for each sample.
 
         This method sets the model to evaluation mode and performs a forward pass
         without computing gradients.
@@ -348,7 +350,8 @@ class IMPACTModel(nn.Module):
         - The input is automatically converted to a PyTorch tensor if it isn't already.
         - For DataFrames, features are reordered to match the expected IMPACT model input order.
         - The output is returned on the same device as the input.
-        - TODO: this function currently returns the probability. It should be renamed to predict_proba() to indicate this, and another function for making binary predictions should be made.
+        - Unlike sklearn's predict_proba, this returns a torch tensor with only the
+          positive-class column (the pipeline is torch-first and device-aware).
         """
         self.eval()
 
@@ -377,6 +380,18 @@ class IMPACTModel(nn.Module):
         outputs = self.forward(x, calculate_impact_score=calculate_impact_score)
 
         return outputs['mortality_prob_logit']  # Return logit-based mortality probabilities
+
+    def predict(
+        self,
+        x: Union[np.ndarray, pd.DataFrame, torch.Tensor],
+        device: Optional[str] = None,
+        calculate_impact_score: bool = False,
+    ) -> torch.Tensor:
+        """
+        Deprecated alias for predict_proba (returns probabilities, not class labels).
+        """
+        warn_deprecated("IMPACTModel.predict", "predict_proba")
+        return self.predict_proba(x, device, calculate_impact_score=calculate_impact_score)
 
     @classmethod
     def get_feature_column_names(cls) -> list:
@@ -656,9 +671,9 @@ if __name__ == "__main__":
             f"Logit-based mortality probabilities: {output_full['mortality_prob_logit'].min():.3f} - {output_full['mortality_prob_logit'].max():.3f}"
         )
 
-    # Test predict method in performance mode
-    mortality_probs = model.predict(x)
-    print("\nPredict method (performance mode) mortality probabilities:")
+    # Test predict_proba method in performance mode
+    mortality_probs = model.predict_proba(x)
+    print("\npredict_proba method (performance mode) mortality probabilities:")
     print(f"Range: {mortality_probs.min():.3f} - {mortality_probs.max():.3f}")
 
     # Compare approaches when using full calculation mode
@@ -673,7 +688,7 @@ if __name__ == "__main__":
         model_cuda = model.cuda()
         x_cuda = x.cuda()
 
-        mortality_probs_cuda = model_cuda.predict(x_cuda)
+        mortality_probs_cuda = model_cuda.predict_proba(x_cuda)
         print("CUDA test passed!")
 
     # Test DataFrame to tensor conversion and both modes

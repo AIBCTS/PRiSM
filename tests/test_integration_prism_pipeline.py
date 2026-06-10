@@ -246,7 +246,7 @@ class TestEndToEndPRiSMPipeline:
         base_model = MockBinaryClassifier(n_features=data['n_features'])
 
         # Verify base model works
-        base_pred = base_model.predict(data['X_test'][:5], device='cpu')
+        base_pred = base_model.predict_proba(data['X_test'][:5], device='cpu')
         assert base_pred.shape == (5,)
 
         # Step 2: Calculate partial responses
