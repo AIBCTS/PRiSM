@@ -47,8 +47,8 @@ dependencies = [
 
 [project.optional-dependencies]
 notebooks = [
-    "nbconvert",
-    "nbformat",
+    "nbconvert>=6.0",
+    "nbformat>=5.1",
     "jupyter",
     "jupyterlab",
     "jupytext",
