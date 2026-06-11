@@ -231,7 +231,7 @@ Run notebooks in `example_notebooks/` in this order:
 
 See `example_notebooks/config/example_config.yaml` for all available options.
 
-> **OpenML datasets:** You can also use datasets from [OpenML](https://www.openml.org/) directly by setting `dataset: openml_<id>` in your config (e.g., `openml_31` for credit-g). The dataset will be fetched automatically via the OpenML API.
+> **OpenML datasets:** You can also use datasets from [OpenML](https://www.openml.org/) directly by setting `dataset: openml_<id>` in your config (e.g., `openml_31` for credit-g). The dataset will be fetched automatically via the OpenML API. Requires the `openml` extra: `pip install prism-xai[openml]`.
 
 ### Example Datasets
 
