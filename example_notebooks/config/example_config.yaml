@@ -36,6 +36,11 @@
 # Random seed for reproducibility
 # random_seed: 257
 
+# Compute device: 'auto' (default; best available), 'cpu', 'cuda', or 'mps'.
+# Can also be set with the PRISM_DEVICE environment variable.
+# Falls back to auto-detection with a warning if the requested device is unavailable.
+# device: 'auto'
+
 # --- Data Splitting ---
 # splitting_method: 'random'       # 'random', 'temporal', or 'predefined'
 # split_ratios: [0.6, 0.2, 0.2]   # [train, test, validation]

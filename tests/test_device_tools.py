@@ -45,6 +45,56 @@ class TestGetDevice:
         # Should use MPS or CUDA depending on priority
         assert device.type in ["mps", "cuda"]
 
+    def test_get_device_preferred_cpu(self):
+        """Explicit 'cpu' request always returns CPU regardless of GPUs."""
+        assert get_device('cpu') == torch.device('cpu')
+
+    def test_get_device_preferred_auto(self):
+        """'auto' behaves like no preference."""
+        assert get_device('auto') == get_device()
+
+    def test_get_device_preferred_case_and_whitespace(self):
+        """Preference is normalized before matching."""
+        assert get_device(' CPU ') == torch.device('cpu')
+
+    @pytest.mark.skipif(not torch.cuda.is_available(), reason="CUDA not available")
+    def test_get_device_preferred_cuda(self):
+        """Explicit 'cuda' request returns a CUDA device when available."""
+        assert get_device('cuda').type == 'cuda'
+
+    def test_get_device_env_var_override(self, monkeypatch):
+        """PRISM_DEVICE env var forces the device when no argument is given."""
+        monkeypatch.setenv('PRISM_DEVICE', 'cpu')
+        assert get_device() == torch.device('cpu')
+
+    def test_get_device_arg_beats_env_var(self, monkeypatch):
+        """An explicit 'auto' argument takes precedence over PRISM_DEVICE."""
+        monkeypatch.delenv('PRISM_DEVICE', raising=False)
+        best = get_device()
+        monkeypatch.setenv('PRISM_DEVICE', 'cpu')
+        assert get_device('auto') == best
+
+    def test_get_device_unavailable_falls_back(self, caplog):
+        """Requesting an unavailable device warns and falls back to auto-detection."""
+        unavailable = (
+            'mps'
+            if not (hasattr(torch.backends, 'mps') and torch.backends.mps.is_available())
+            else 'cuda' if not torch.cuda.is_available() else None
+        )
+        if unavailable is None:
+            pytest.skip("All device types available on this machine")
+        with caplog.at_level('WARNING', logger='prism.device_tools'):
+            device = get_device(unavailable)
+        assert device == get_device()
+        assert any('falling back' in r.message for r in caplog.records)
+
+    def test_get_device_invalid_string_falls_back(self, caplog):
+        """Nonsense device strings warn and fall back instead of raising."""
+        with caplog.at_level('WARNING', logger='prism.device_tools'):
+            device = get_device('quantum')
+        assert device == get_device()
+        assert any('falling back' in r.message for r in caplog.records)
+
 
 class TestGetAvailableGPUs:
     """Tests for get_available_gpus function."""

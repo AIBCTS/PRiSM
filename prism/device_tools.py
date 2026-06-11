@@ -159,8 +159,44 @@ def get_available_devices():
     return available_devices
 
 
-def get_device():
-    """Return the first (usually best) available device: CUDA, MPS, or CPU."""
+def get_device(preferred: Optional[str] = None):
+    """Resolve the compute device.
+
+    Priority: `preferred` argument > PRISM_DEVICE environment variable >
+    auto-detect (CUDA, then MPS, then CPU).
+
+    Parameters
+    ----------
+    preferred : str, optional
+        Requested device: 'auto', 'cpu', 'cuda', 'cuda:N', or 'mps'.
+        Typically passed from the YAML config's `device` key. None or
+        'auto' selects the best available device.
+
+    Returns
+    -------
+    torch.device
+        The resolved device. If the requested device is unavailable, a
+        warning is logged and auto-detection is used instead.
+    """
+    import os
+
+    requested = preferred if preferred is not None else os.environ.get('PRISM_DEVICE')
+    if requested:
+        requested = str(requested).strip().lower()
+        if requested != 'auto':
+            if requested == 'cpu':
+                return torch.device('cpu')
+            if requested.startswith('cuda') and torch.cuda.is_available():
+                return torch.device(requested)
+            if (
+                requested == 'mps'
+                and hasattr(torch.backends, 'mps')
+                and torch.backends.mps.is_available()
+            ):
+                return torch.device('mps')
+            logger.warning(
+                f"Requested device '{requested}' is not available; falling back to auto-detection"
+            )
     available_devices = get_available_devices()
     return available_devices[0]
 
