@@ -73,8 +73,6 @@ import torch.nn.init as init
 import torch.optim as optim
 from sklearn.metrics import roc_auc_score
 
-from prism._deprecation import warn_deprecated
-
 # Setup logging for training progress
 logger = logging.getLogger(__name__)
 
@@ -229,13 +227,22 @@ class MaskedMLP(nn.Module):
         return outputs  # Return on the same device as input
 
     def predict(
-        self, x: Union[np.ndarray, pd.DataFrame, torch.Tensor], device: Optional[str] = None
+        self,
+        x: Union[np.ndarray, pd.DataFrame, torch.Tensor],
+        device: Optional[str] = None,
+        threshold: float = 0.5,
     ) -> torch.Tensor:
         """
-        Deprecated alias for predict_proba (returns probabilities, not class labels).
+        Binary class labels: (predict_proba(x, device) >= threshold).
+
+        Use predict_proba for the underlying probabilities.
+
+        Returns
+        -------
+        torch.Tensor
+            Labels in {0, 1} with dtype long, same shape as predict_proba output.
         """
-        warn_deprecated("MaskedMLP.predict", "predict_proba")
-        return self.predict_proba(x, device)
+        return (self.predict_proba(x, device) >= threshold).long()
 
     @torch.no_grad()
     def predict_proba_numpy(
@@ -246,15 +253,6 @@ class MaskedMLP(nn.Module):
         converts the output to a NumPy array.
         """
         return self.predict_proba(x, device).cpu().numpy()
-
-    def predict_numpy(
-        self, x: Union[np.ndarray, pd.DataFrame], device: Optional[str] = None
-    ) -> np.ndarray:
-        """
-        Deprecated alias for predict_proba_numpy (returns probabilities, not class labels).
-        """
-        warn_deprecated("MaskedMLP.predict_numpy", "predict_proba_numpy")
-        return self.predict_proba_numpy(x, device)
 
 
 def apply_mask(model):

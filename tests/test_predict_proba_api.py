@@ -1,9 +1,9 @@
-"""Tests for the predict_proba API and the deprecated predict aliases.
+"""Tests for the predict_proba / predict API.
 
 All PRiSM model classes (MaskedMLP, LogisticRegression, IMPACTModel,
-SklearnWrapper) expose predict_proba returning P(y=1) as a torch tensor.
-The old predict name remains as a deprecated alias that emits
-PrismDeprecationWarning and returns identical values.
+SklearnWrapper) expose predict_proba returning P(y=1) as a torch tensor,
+and predict returning binary class labels (predict_proba >= threshold)
+as a long tensor, matching sklearn semantics.
 """
 
 import io
@@ -14,7 +14,6 @@ import pytest
 import torch
 from sklearn.linear_model import LogisticRegression as SkLogisticRegression
 
-from prism._deprecation import PrismDeprecationWarning
 from prism.impact import IMPACTModel
 from prism.logreg import LogisticRegression
 from prism.maskedmlp import MaskedMLP
@@ -83,56 +82,69 @@ class TestPredictProba:
         np.testing.assert_array_equal(result, mlp_model.predict_proba(x).cpu().numpy())
 
 
-class TestDeprecatedPredictAliases:
-    """predict warns with PrismDeprecationWarning and returns identical values."""
+class TestPredictLabels:
+    """predict returns binary labels (predict_proba >= threshold) as a long tensor."""
 
-    def test_maskedmlp_predict(self, mlp_model):
+    @pytest.mark.parametrize("threshold", [0.3, 0.5, 0.7])
+    def test_maskedmlp_predict(self, mlp_model, threshold):
         x = torch.randn(16, 5)
-        expected = mlp_model.predict_proba(x)
-        with pytest.warns(PrismDeprecationWarning, match="MaskedMLP.predict is deprecated"):
-            result = mlp_model.predict(x)
-        assert torch.equal(result, expected)
+        proba = mlp_model.predict_proba(x)
+        result = mlp_model.predict(x, threshold=threshold)
+        assert result.dtype == torch.long
+        assert result.shape == proba.shape
+        assert torch.equal(result, (proba >= threshold).long())
 
-    def test_maskedmlp_predict_numpy(self, mlp_model):
-        x = np.random.randn(16, 5)
-        expected = mlp_model.predict_proba_numpy(x)
-        with pytest.warns(PrismDeprecationWarning, match="MaskedMLP.predict_numpy"):
-            result = mlp_model.predict_numpy(x)
-        np.testing.assert_array_equal(result, expected)
-
-    def test_logreg_predict(self, logreg_model):
+    def test_maskedmlp_predict_default_threshold(self, mlp_model):
         x = torch.randn(16, 5)
-        expected = logreg_model.predict_proba(x)
-        with pytest.warns(PrismDeprecationWarning, match="LogisticRegression.predict"):
-            result = logreg_model.predict(x)
-        assert torch.equal(result, expected)
+        proba = mlp_model.predict_proba(x)
+        result = mlp_model.predict(x)
+        assert torch.equal(result, (proba >= 0.5).long())
+        assert set(result.unique().tolist()) <= {0, 1}
 
-    def test_impact_predict(self):
+    @pytest.mark.parametrize("threshold", [0.3, 0.5, 0.7])
+    def test_logreg_predict(self, logreg_model, threshold):
+        x = torch.randn(16, 5)
+        proba = logreg_model.predict_proba(x)
+        result = logreg_model.predict(x, threshold=threshold)
+        assert result.dtype == torch.long
+        assert result.shape == proba.shape
+        assert torch.equal(result, (proba >= threshold).long())
+
+    @pytest.mark.parametrize("threshold", [0.3, 0.5, 0.7])
+    def test_impact_predict(self, threshold):
         model = IMPACTModel()
         x = torch.rand(8, 18)
-        expected = model.predict_proba(x)
-        with pytest.warns(PrismDeprecationWarning, match="IMPACTModel.predict"):
-            result = model.predict(x)
-        assert torch.equal(result, expected)
+        proba = model.predict_proba(x)
+        result = model.predict(x, threshold=threshold)
+        assert result.dtype == torch.long
+        assert result.shape == proba.shape
+        assert torch.equal(result, (proba >= threshold).long())
 
-    def test_wrapper_predict(self, wrapped_sklearn):
+    @pytest.mark.parametrize("threshold", [0.3, 0.5, 0.7])
+    def test_wrapper_predict(self, wrapped_sklearn, threshold):
         X = np.array([[0.5, 0.5], [2.5, 2.5]])
-        expected = wrapped_sklearn.predict_proba(X)
-        with pytest.warns(PrismDeprecationWarning, match="SklearnWrapper.predict"):
-            result = wrapped_sklearn.predict(X)
-        assert torch.equal(result, expected)
+        proba = wrapped_sklearn.predict_proba(X)
+        result = wrapped_sklearn.predict(X, threshold=threshold)
+        assert result.dtype == torch.long
+        assert result.shape == proba.shape
+        assert torch.equal(result, (proba >= threshold).long())
 
-    def test_calculator_predict(self, mlp_model):
+    def test_wrapper_predict_matches_inner_at_half(self, wrapped_sklearn):
+        """At the default 0.5 threshold the labels match the inner sklearn predict."""
+        X = np.array([[0.0, 0.0], [1.4, 1.4], [1.6, 1.6], [3.0, 3.0]])
+        inner_labels = wrapped_sklearn.model.predict(X)
+        result = wrapped_sklearn.predict(X)
+        np.testing.assert_array_equal(result.numpy(), inner_labels)
+
+    def test_calculator_has_no_predict(self, mlp_model):
+        """The calculator is an internal component; it exposes predict_proba only."""
         from prism.partial_responses import PartialResponseCalculator
 
         x_train = torch.rand(20, 5)
         calculator = PartialResponseCalculator(
             mlp_model, method='dirac', device='cpu', input_dim=5, x_train=x_train
         )
-        expected = calculator.predict_proba(x_train)
-        with pytest.warns(PrismDeprecationWarning, match="PartialResponseCalculator.predict"):
-            result = calculator.predict(x_train)
-        assert torch.equal(result, expected)
+        assert not hasattr(calculator, 'predict')
 
 
 class TestDeviceHandling:

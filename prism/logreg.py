@@ -1,8 +1,6 @@
 import torch
 import torch.nn as nn
 
-from prism._deprecation import warn_deprecated
-
 
 # Logistic Regression class using PyTorch
 class LogisticRegression(nn.Module):
@@ -41,10 +39,13 @@ class LogisticRegression(nn.Module):
             # Return probabilities (0-1) by applying sigmoid to the logits
             return torch.sigmoid(self.forward(X))
 
-    def predict(self, X, device=None):
-        """Deprecated alias for predict_proba (returns probabilities, not class labels)."""
-        warn_deprecated("LogisticRegression.predict", "predict_proba")
-        return self.predict_proba(X, device)
+    def predict(self, X, device=None, threshold=0.5):
+        """
+        Binary class labels: (predict_proba(X, device) >= threshold) as a long tensor.
+
+        Use predict_proba for the underlying probabilities.
+        """
+        return (self.predict_proba(X, device) >= threshold).long()
 
     def get_logits(self, X, device=None):
         """Helper method to get raw logits when needed"""

@@ -17,8 +17,6 @@ import logging
 
 import torch
 
-from prism._deprecation import warn_deprecated
-
 logger = logging.getLogger(__name__)
 
 # Try to import cupy for GPU-accelerated inference
@@ -237,10 +235,14 @@ class SklearnWrapper:
         result = self.model.predict_proba(X)[:, 1]
         return torch.tensor(result, dtype=torch.float32, device=device)
 
-    def predict(self, X, device=None):
-        """Deprecated alias for predict_proba (returns probabilities, not class labels)."""
-        warn_deprecated("SklearnWrapper.predict", "predict_proba")
-        return self.predict_proba(X, device)
+    def predict(self, X, device=None, threshold=0.5):
+        """
+        Binary class labels: (predict_proba(X, device) >= threshold) as a long tensor.
+
+        Use predict_proba for the underlying probabilities. The wrapped sklearn
+        model's own label predict remains reachable via ``wrapper.model.predict``.
+        """
+        return (self.predict_proba(X, device) >= threshold).long()
 
     def __call__(self, X):
         """

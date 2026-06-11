@@ -14,7 +14,6 @@ from typing import Any, Dict, List, Optional, Tuple
 import numpy as np
 import torch
 
-from prism._deprecation import warn_deprecated
 from prism.device_tools import _free_all_gpu_caches, device_empty_cache
 
 from .lebesgue import LebesgueMixin, get_variable_range
@@ -972,11 +971,6 @@ class PartialResponseCalculator(LebesgueMixin):
             P(y=1) per sample, squeezed to shape (n_samples,).
         """
         return self.model.predict_proba(x, device=self.device).squeeze()
-
-    def predict(self, x: torch.Tensor) -> torch.Tensor:
-        """Deprecated alias for predict_proba (returns probabilities, not class labels)."""
-        warn_deprecated("PartialResponseCalculator.predict", "predict_proba")
-        return self.predict_proba(x)
 
     @staticmethod
     def _estimate_bytes_per_row(model) -> int:

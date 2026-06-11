@@ -2,7 +2,6 @@ from importlib.metadata import version  # noqa: F401
 
 from prism import config  # noqa: F401
 from prism import data as data  # noqa: F401
-from prism._deprecation import PrismDeprecationWarning  # noqa: F401
 from prism.config_loader import (  # noqa: F401
     DEFAULT_ID_CANDIDATES,
     DEFAULT_LABEL_FILE_CANDIDATES,

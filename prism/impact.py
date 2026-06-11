@@ -6,8 +6,6 @@ import pandas as pd
 import torch
 import torch.nn as nn
 
-from prism._deprecation import warn_deprecated
-
 
 class IMPACTFeatureTransformer(nn.Module):
     """
@@ -386,12 +384,15 @@ class IMPACTModel(nn.Module):
         x: Union[np.ndarray, pd.DataFrame, torch.Tensor],
         device: Optional[str] = None,
         calculate_impact_score: bool = False,
+        threshold: float = 0.5,
     ) -> torch.Tensor:
         """
-        Deprecated alias for predict_proba (returns probabilities, not class labels).
+        Binary class labels: (predict_proba(...) >= threshold) as a long tensor.
+
+        Use predict_proba for the underlying probabilities.
         """
-        warn_deprecated("IMPACTModel.predict", "predict_proba")
-        return self.predict_proba(x, device, calculate_impact_score=calculate_impact_score)
+        proba = self.predict_proba(x, device, calculate_impact_score=calculate_impact_score)
+        return (proba >= threshold).long()
 
     @classmethod
     def get_feature_column_names(cls) -> list:
