@@ -9,6 +9,7 @@ example_notebooks/generic_variable_labels_*
 # Temporary debug/export files
 *_export.py
 !prism/plotting/csv_export.py
+!prism/plotting/json_export.py
 *.backup
 debug_*.py
 
