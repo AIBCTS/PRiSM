@@ -67,15 +67,14 @@ cp .env.example .env
 #    preprocessing.ipynb -> modelling/train_mlp.ipynb -> prism_analysis.ipynb
 ```
 
-> **Note on the example config (speed vs. accuracy):** the bundled `htx_example` config (10,000 rows)
-> is tuned for a fast first run -- about 5 minutes on CPU. It disables hyperparameter tuning and uses
-> the `dirac` partial-response method by default. `dirac` is a faster approximation that evaluates each
-> partial response at reference values and so ignores correlations between features; it is **less
-> accurate than `lebesgue`**, which integrates over the feature distribution. **The published study
-> uses `lebesgue`**, and it is the recommended method for real analyses. For a full-fidelity run that
-> matches the study, set `hyperparameter_tuning.enabled: true` and `partial_response_method: 'lebesgue'`
-> in `example_notebooks/config/htx_example.yaml` (expect tens of minutes on CPU; a CUDA GPU helps
-> substantially).
+> **Note on the example config (speed vs. accuracy):** the bundled `htx_example` config (~5,000 rows)
+> is tuned for a quick first run -- roughly 20 minutes on CPU (faster on a GPU). It disables
+> hyperparameter tuning by default and uses the `lebesgue` partial-response method, which integrates
+> over the feature distribution and is **the method used in the published study** -- recommended for
+> real analyses. Its cost scales with row count, so for a faster first run you can set
+> `partial_response_method: 'dirac'` in `example_notebooks/config/htx_example.yaml`; `dirac` evaluates
+> each partial response at reference values (ignoring feature correlations), which is quicker but less
+> accurate. For a full-fidelity run, additionally set `hyperparameter_tuning.enabled: true`.
 
 > **Important:** If you change `.env`, restart your Jupyter kernel for changes to take effect.
 
@@ -209,7 +208,7 @@ Run notebooks in `example_notebooks/` in this order:
    - `train_xgb.ipynb` - XGBoost
    - `train_rf.ipynb` - Random Forest
    - `train_logreg.ipynb` - Logistic Regression
-   - `train_impact.ipynb` - Pre-trained clinical model (heart transplant data)
+   - `train_impact.ipynb` - Pre-trained clinical IMPACT model (historical reference; needs a dataset with IMPACT's feature schema, which the bundled `htx_example` does not provide)
 
 3. **PRiSM Analysis** (`prism_analysis.ipynb`)
    - **Phase I -- Black-box decomposition:** functional ANOVA decomposes predictions into univariate main effects and bivariate interactions (partial responses); LASSO selects important terms and assembles a baseline nomogram
@@ -235,7 +234,7 @@ See `example_notebooks/config/example_config.yaml` for all available options.
 
 ### Example Datasets
 
-- **htx_example**: Synthetic heart transplant data preserving statistical properties of UNOS registry data (1997-2022). No patient data is replicated.
+- **htx_example**: Synthetic heart transplant data (5,000 rows) preserving statistical properties and temporal split of the data used in the published study. No patient data is replicated.
 
 ---
 
@@ -254,7 +253,7 @@ Both the `prism` CLI and the legacy `python run_*.py` scripts are supported:
 See the [Pipeline Usage Guide](docs/PIPELINE_USAGE.md) for multi-GPU execution, PRiSM-only mode, batch runs, caching, output structure, and other advanced workflows.
 
 ```bash
-prism run htx_example                       # Run full pipeline (~5 min on CPU with default config)
+prism run htx_example                       # Run full pipeline (~20 min on CPU with default config)
 prism run htx_example my_config             # Multiple configs
 prism run htx_example --skip-preprocessing  # Use existing preprocessed data
 prism list-configs                          # List available configs

@@ -1,12 +1,19 @@
+# Configuration for the htx_example demo dataset.
+#
+# htx_example is a small (~5,000-row) fully synthetic heart-transplant dataset
+# bundled with the package. It preserves the statistical properties of UNOS
+# registry data (no patient rows are replicated), and is sized and tuned for a
+# fast first PRiSM run.
+
 # =============================================================================
 # REQUIRED FIELDS FOR PIPELINE RUNNERS
 # =============================================================================
 # Dataset name (maps to data/raw/{dataset}.csv)
 dataset: htx_example
 
-# Models to train and analyze (used by pipeline runners)
+# Models to train and analyze. Single model keeps the first run fast;
+# add xgb, logreg, rf to reproduce the full model set.
 models: [mlp]
-# models: [mlp, xgb, rf, logreg]
 
 # =============================================================================
 # PREPROCESSING SETTINGS
@@ -15,84 +22,57 @@ models: [mlp]
 random_seed: 257
 
 # Target and ID variables
-target_candidates: ['event_oneyear']
-id_candidates: ['trr_id_code']
+target_candidates: ['MORTALITY_365D']
+id_candidates: ['TRR_ID_CODE']
 
-# Data splitting: temporal by transplant year
-splitting_method: 'temporal'
-time_variable: 'tx_year'
-split_ratios: [0.6, 0.2, 0.2]
-drop_time_variable: true
+# Variable display labels so nomogram plots show human-readable names.
+label_file_candidates: ['htx_example_variable_labels.csv']
 
-# Categorical encoding: binary→ordinal, multi-category→one-hot
-# recethcat (4 categories) and diagn (6 categories) will be one-hot encoded
+# Data splitting: predefined train/val/test assignments in the 'split' column.
+splitting_method: 'predefined'
+split_column: 'split'
+drop_split_column: true
+
+# Categorical encoding: binary->ordinal, multi-category->one-hot
 force_all_ordinal: false
 convert_numeric: true
 categorical_threshold: 8
 
-# Target inversion not needed (1 = died is positive class)
+# Target inversion: keep 1=died as positive class
 invert_target: false
 
 # Reference column selection for one-hot encoded categorical variables
 # Options: 'alphabetical', 'most_common', 'manual'
-# Default: 'alphabetical' (if not specified)
-reference_column_strategy: 'manual'
-reference_columns:
-  diagn: 'diagn_Cardiomyopathy'
-  recethcat: 'recethcat_Caucasian'
+reference_column_strategy: 'most_common'
 
 # ============================================================================
 # PRISM ANALYSIS CONFIGURATION
 # ============================================================================
-# These settings control the PRiSM analysis notebook behavior
-
-# Partial response calculation method
-# - 'lebesgue': Integration over feature distributions (most accurate,
-#   recommended for real analyses; cost scales with row count)
-# - 'dirac': Point-mass evaluation at reference values (fast, row-count
-#   independent; keeps this 10k-row demo quick on CPU)
-partial_response_method: 'dirac'
-
-# Trim quantile for plot variable ranges
-# - null: No trimming (show full range)
-# - 0.01: Trim 1% from each tail
-# - 0.05: Trim 5% from each tail
-trim_quantile: 0.01
-
+# Partial response calculation method ('lebesgue' recommended, or 'dirac')
+partial_response_method: 'lebesgue'
+# Trim quantile for plot variable ranges (null = full range)
+trim_quantile: null
 # Save nomogram JSON files for later use/reproduction
 save_nomogram_json: true
-
 # Save generated figures to disk
 save_figs: false
 
 # ============================================================================
 # HYPERPARAMETER TUNING CONFIGURATION
 # ============================================================================
+# Disabled by default so the demo run is fast and deterministic (uses the global
+# default MLP hyperparameters). Set enabled: true (and n_trials) to tune via Optuna.
 hyperparameter_tuning:
+  enabled: false
   n_jobs: 8
   metric: 'test_auc'
-  enabled: false  # off by default: fast, deterministic first run
-  # set enabled: true to tune via Optuna (slower)
   n_trials: 32
-  xgb:
-    n_trials: 64
-  rf:
-    n_trials: 64
-  logreg:
-    n_trials: 16
 
-
+# ============================================================================
 # LASSO Lambda Selection
-# If not specified, defaults to: max_test_auc with target_ratio=0.998
-#
-# Available methods:
-#   - max_test_auc: Select lambda achieving target_ratio of max AUC (default)
-#   - min_test_auc: Select sparsest lambda exceeding min_auc threshold
-#   - non_inferiority: Select sparsest lambda meeting dynamic AUC threshold
-#       threshold = max_auc - ni_level * (max_auc - 0.5)
-#       e.g., ni_level=0.1 with max_auc=0.80 -> threshold=0.77
-#   - by_features: Select lambda with target_features count
-#   - by_index: Select specific lambda_index directly
+# ============================================================================
+# max_test_auc selects the sparsest lambda achieving target_ratio of the maximum
+# test AUROC. 0.998 matches the value used in the published study.
 lasso_lambda_selection:
   blackbox:
     method: 'max_test_auc'

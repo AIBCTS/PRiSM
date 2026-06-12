@@ -1,30 +1,46 @@
 original_name,processed_name,user_label,notes
-event_oneyear,event_oneyear,One-year mortality,TARGET VARIABLE
-recageyear,recageyear,Recipient age (years),Original variable
-recweightkg,recweightkg,Recipient weight (kg),Original variable
-recbilirubin,recbilirubin,Recipient serum bilirubin (umol/L),Original variable
-donage,donage,Donor age (years),Original variable
-donweight,donweight,Donor weight (kg),Original variable
-donischemictimeminutes,donischemictimeminutes,Ischemic time (minutes),Original variable
-recsex,recsex,Recipient sex,Original variable
-recdialysis,recdialysis,Recipient on dialysis,Original variable
-rececmo,rececmo,Recipient extracorporeal membrane oxygenation (ECMO),Original variable
-recvad,recvad,Recipient ventricular assist device (VAD),Original variable
-reciabp,reciabp,Recipient intra-aortic balloon pump (IABP),Original variable
-recventilator,recventilator,Recipient on ventilator,Original variable
-donsex,donsex,Donor sex,Original variable
-recinfections2weeks,recinfections2weeks,Recipient infection within 2 weeks,Original variable
-creatinine_clearance,creatinine_clearance,Creatinine clearance (mL/min),Original variable
-diagn,diagn,Primary cardiac diagnosis,One-hot group name (for collapsed plots)
-diagn,diagn_Cardiomyopathy,Cardiomyopathy,One-hot reference (dropped) from diagn
-diagn,diagn_CAD,Ischemic cardiomyopathy,One-hot encoded from diagn
-diagn,diagn_Congenital,Congenital heart disease,One-hot encoded from diagn
-diagn,diagn_Graftfailure,Graft failure,One-hot encoded from diagn
-diagn,diagn_Misc,Other diagnosis,One-hot encoded from diagn
-diagn,diagn_Valve,Valvular heart disease,One-hot encoded from diagn
-recethcat,recethcat,Recipient ethnicity,One-hot group name (for collapsed plots)
-recethcat,recethcat_Caucasian,Caucasian,One-hot reference (dropped) from recethcat
-recethcat,recethcat_African American,African American,One-hot encoded from recethcat
-recethcat,recethcat_Hispanic,Hispanic,One-hot encoded from recethcat
-recethcat,recethcat_Other,Other ethnicity,One-hot encoded from recethcat
-NONE,trr_id_code,Patient ID,Generated unique ID variable
+TRR_ID_CODE,TRR_ID_CODE,Transplant Recipient ID,ID VARIABLE
+MORTALITY_365D,MORTALITY_365D,1-Year Mortality,TARGET VARIABLE
+DAT_AGE,DAT_AGE,Recipient Age (years),Original variable
+DAT_BMI_CALC,DAT_BMI_CALC,Body-Mass Index (kg/m2),Original variable
+DAT_HGT_CM_CALC,DAT_HGT_CM_CALC,Height (cm),Original variable
+DAT_DAYSWAIT_CHRON,DAT_DAYSWAIT_CHRON,Duration on Waiting List (days),Original variable
+DAT_CREATININE_CLEARANCE,DAT_CREATININE_CLEARANCE,Creatinine Clearance (mL/min),Original variable
+DAT_TBILI,DAT_TBILI,Total Bilirubin (mg/dL),Original variable
+DAT_TOT_SERUM_ALBUM,DAT_TOT_SERUM_ALBUM,Serum Albumin (g/dL),Original variable
+DAT_AGE_DON,DAT_AGE_DON,Donor Age (years),Original variable
+DAT_WGT_KG_DON_CALC,DAT_WGT_KG_DON_CALC,Donor Weight (kg),Original variable
+DAT_ISCHTIME,DAT_ISCHTIME,Total Ischemic Time (hours),Original variable
+DAT_VENTILATOR_TRR,DAT_VENTILATOR_TRR,Ventilator Support,Ordinal encoded from DAT_VENTILATOR_TRR
+DAT_DIAL_AFTER_LIST,DAT_DIAL_AFTER_LIST,Dialysis Dependence,Ordinal encoded from DAT_DIAL_AFTER_LIST
+DAT_TRANSFUSIONS,DAT_TRANSFUSIONS,Prior Blood Transfusions,Ordinal encoded from DAT_TRANSFUSIONS
+DAT_INFECT_IV_DRUG_TRR,DAT_INFECT_IV_DRUG_TRR,Infection (2 Weeks Prior to Transplant),Ordinal encoded from DAT_INFECT_IV_DRUG_TRR
+DAT_ECMO_TRR,DAT_ECMO_TRR,ECMO Support,Ordinal encoded from DAT_ECMO_TRR
+DAT_IMPL_DEFIBRIL,DAT_IMPL_DEFIBRIL,Implantable Cardioverter-Defibrillator (ICD),Ordinal encoded from DAT_IMPL_DEFIBRIL
+DAT_ALCOHOL_HEAVY_DON,DAT_ALCOHOL_HEAVY_DON,Donor History of Heavy Alcohol Use,Ordinal encoded from DAT_ALCOHOL_HEAVY_DON
+DAT_DIAG_NEW,DAT_DIAG_NEW,Primary Cause of Heart Failure,One-hot group name (for collapsed plots)
+DAT_DIAG_NEW,DAT_DIAG_NEW_Nonischemic cardiomyopathy,Nonischemic Cardiomyopathy,One-hot reference (dropped) from DAT_DIAG_NEW
+DAT_DIAG_NEW,DAT_DIAG_NEW_Congenital,Congenital Heart Disease,One-hot encoded from DAT_DIAG_NEW
+DAT_DIAG_NEW,DAT_DIAG_NEW_Graft Failure,Prior Graft Failure,One-hot encoded from DAT_DIAG_NEW
+DAT_DIAG_NEW,DAT_DIAG_NEW_Ischemic cardiomyopathy,Ischemic Cardiomyopathy,One-hot encoded from DAT_DIAG_NEW
+DAT_DIAG_NEW,DAT_DIAG_NEW_Other,Other Diagnosis,One-hot encoded from DAT_DIAG_NEW
+DAT_DIAG_NEW,DAT_DIAG_NEW_Valvular Heart Disease,Valvular Heart Disease,One-hot encoded from DAT_DIAG_NEW
+DAT_VAD_DEVICE_TY_TRR,DAT_VAD_DEVICE_TY_TRR,Ventricular Assist Device (VAD),One-hot group name (for collapsed plots)
+DAT_VAD_DEVICE_TY_TRR,DAT_VAD_DEVICE_TY_TRR_NONE,No VAD,One-hot reference (dropped) from DAT_VAD_DEVICE_TY_TRR
+DAT_VAD_DEVICE_TY_TRR,DAT_VAD_DEVICE_TY_TRR_LVAD,LVAD,One-hot encoded from DAT_VAD_DEVICE_TY_TRR
+DAT_VAD_DEVICE_TY_TRR,DAT_VAD_DEVICE_TY_TRR_BiVAD,BiVAD,One-hot encoded from DAT_VAD_DEVICE_TY_TRR
+DAT_VAD_DEVICE_TY_TRR,DAT_VAD_DEVICE_TY_TRR_LVAD/RVAD/TAH Unspecified,Other,One-hot encoded from DAT_VAD_DEVICE_TY_TRR
+DAT_VAD_DEVICE_TY_TRR,DAT_VAD_DEVICE_TY_TRR_RVAD,RVAD,One-hot encoded from DAT_VAD_DEVICE_TY_TRR
+DAT_MED_COND_TRR,DAT_MED_COND_TRR,Status at Transplant,One-hot group name (for collapsed plots)
+DAT_MED_COND_TRR,DAT_MED_COND_TRR_Not Hospitalized,Not Hospitalized,One-hot reference (dropped) from DAT_MED_COND_TRR
+DAT_MED_COND_TRR,DAT_MED_COND_TRR_Hospitalized (not ICU),Hospitalized (Not ICU),One-hot encoded from DAT_MED_COND_TRR
+DAT_MED_COND_TRR,DAT_MED_COND_TRR_ICU,In ICU,One-hot encoded from DAT_MED_COND_TRR
+DAT_HCV_SEROSTATUS,DAT_HCV_SEROSTATUS,HCV Seropositivity,One-hot group name (for collapsed plots)
+DAT_HCV_SEROSTATUS,DAT_HCV_SEROSTATUS_Negative,Negative,One-hot reference (dropped) from DAT_HCV_SEROSTATUS
+DAT_HCV_SEROSTATUS,DAT_HCV_SEROSTATUS_Not Done,Not Done,One-hot encoded from DAT_HCV_SEROSTATUS
+DAT_HCV_SEROSTATUS,DAT_HCV_SEROSTATUS_Positive,Positive,One-hot encoded from DAT_HCV_SEROSTATUS
+DAT_DIAB,DAT_DIAB,Diabetes Mellitus,One-hot group name (for collapsed plots)
+DAT_DIAB,DAT_DIAB_NO,No Diabetes,One-hot reference (dropped) from DAT_DIAB
+DAT_DIAB,DAT_DIAB_Other,Other Diabetes Type,One-hot encoded from DAT_DIAB
+DAT_DIAB,DAT_DIAB_Type I,Type I Diabetes,One-hot encoded from DAT_DIAB
+DAT_DIAB,DAT_DIAB_Type II,Type II Diabetes,One-hot encoded from DAT_DIAB

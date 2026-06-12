@@ -1,11 +1,10 @@
-# Configuration for htx_example dataset -- SPARSE variant
+# Configuration for the htx_example demo dataset -- SPARSE variant.
 #
-# Sparse (non-inferiority) lambda selection at blackbox nomogram step:
-# selects the sparsest lambda whose tuning AUROC remains non-inferior
+# Same as htx_example.yaml but uses non-inferiority lambda selection at the
+# blackbox nomogram step: the sparsest lambda whose AUROC remains non-inferior
+# to the maximum. Produces a smaller nomogram for comparison.
 #
-# WORKFLOW:
-#   1. First run: python run_hyperparameter_tuning.py htx_example --trials 25
-#   2. Then run: python run_prism_pipeline.py htx_example_sparse
+#   python run_prism_pipeline.py htx_example_sparse
 
 # =============================================================================
 # REQUIRED FIELDS FOR PIPELINE RUNNERS
@@ -18,31 +17,28 @@ models: [mlp]
 # =============================================================================
 random_seed: 257
 
-target_candidates: ['event_oneyear']
-id_candidates: ['trr_id_code']
+target_candidates: ['MORTALITY_365D']
+id_candidates: ['TRR_ID_CODE']
 
-splitting_method: 'temporal'
-time_variable: 'tx_year'
-split_ratios: [0.6, 0.2, 0.2]
-drop_time_variable: true
+# Variable display labels so nomogram plots show human-readable names.
+label_file_candidates: ['htx_example_variable_labels.csv']
+
+splitting_method: 'predefined'
+split_column: 'split'
+drop_split_column: true
 
 force_all_ordinal: false
 convert_numeric: true
 categorical_threshold: 8
 invert_target: false
 
-reference_column_strategy: 'manual'
-reference_columns:
-  diagn: 'diagn_Cardiomyopathy'
-  recethcat: 'recethcat_Caucasian'
+reference_column_strategy: 'most_common'
 
 # ============================================================================
 # PRISM ANALYSIS CONFIGURATION
 # ============================================================================
-# 'lebesgue' is most accurate and recommended for real analyses, but its cost
-# scales with row count; 'dirac' keeps the 10k-row demo fast on CPU.
-partial_response_method: 'dirac'
-trim_quantile: 0.01
+partial_response_method: 'lebesgue'
+trim_quantile: null
 save_nomogram_json: true
 save_figs: false
 
@@ -50,32 +46,21 @@ save_figs: false
 # HYPERPARAMETER TUNING CONFIGURATION
 # ============================================================================
 hyperparameter_tuning:
+  enabled: false
   n_jobs: 8
   metric: 'test_auc'
-  enabled: false  # off by default: fast, deterministic first run
-  # set enabled: true to tune via Optuna (slower)
   n_trials: 32
-  xgb:
-    n_trials: 64
-  rf:
-    n_trials: 64
-  logreg:
-    n_trials: 16
 
 # ============================================================================
 # LASSO Lambda Selection -- SPARSE
 # ============================================================================
-# Non-inferiority selection: sparsest lambda meeting dynamic AUC threshold
-# threshold = max_auc - ni_level * (max_auc - 0.5)
-# e.g., ni_level=0.1 with max_auc=0.80 -> threshold=0.77
-#
-# ni_level is 0.05 here (tighter than a typical 0.1): on this smaller public
-# synthetic dataset a 0.1 band collapses to a ~2-term nomogram, so we
-# tighten the threshold to retain a more illustrative sparse model (~4 terms).
+# Non-inferiority: sparsest lambda meeting a dynamic AUROC threshold
+#   threshold = max_auc - ni_level * (max_auc - 0.5)
+#   e.g. ni_level=0.1 with max_auc=0.80 -> threshold=0.77
 lasso_lambda_selection:
   blackbox:
     method: 'non_inferiority'
-    ni_level: 0.05
+    ni_level: 0.1
     beta_threshold: 0.1
   prn:
     method: 'max_test_auc'
