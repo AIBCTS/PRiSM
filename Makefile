@@ -3,7 +3,6 @@
 #################################################################################
 
 PROJECT_NAME = prism
-PYTHON_VERSION = 3.11
 
 # Allow specification of a custom Python interpreter
 # e.g. for DGX2 use CUSTOM_PYTHON=/opt/python/3.11.7/bin/python3 make create_environment
@@ -14,23 +13,36 @@ ifdef CUSTOM_PYTHON
     PYTHON_INTERPRETER = $(CUSTOM_PYTHON)
 else
     ifeq ($(OS),Windows_NT)
-        # Windows: Try python, then py (Python Launcher), then python3
-        PYTHON_CHECK := $(shell where python 2>nul)
-        ifeq ($(PYTHON_CHECK),)
-            PYTHON_CHECK := $(shell where py 2>nul)
-            ifeq ($(PYTHON_CHECK),)
-                PYTHON_CHECK := $(shell where python3 2>nul)
+        # Windows: prefer the launcher with an explicitly supported version (3.12, then 3.11),
+        # since a bare `python`/`py` can resolve to 3.10 or 3.14 (no numpy<2.0 wheels there).
+        PY312_CHECK := $(shell py -3.12 --version 2>nul)
+        ifeq ($(PY312_CHECK),)
+            PY311_CHECK := $(shell py -3.11 --version 2>nul)
+            ifeq ($(PY311_CHECK),)
+                # No supported launcher version found; fall back to whatever is on PATH
+                # (the version check below will reject it if it is outside 3.11-3.12).
+                PYTHON_CHECK := $(shell where python 2>nul)
                 ifeq ($(PYTHON_CHECK),)
-                    PYTHON_INTERPRETER = python
-                    $(warning Python not found in PATH. Install Python or specify full path: make CUSTOM_PYTHON=/path/to/python.exe create_environment)
+                    PYTHON_CHECK := $(shell where py 2>nul)
+                    ifeq ($(PYTHON_CHECK),)
+                        PYTHON_CHECK := $(shell where python3 2>nul)
+                        ifeq ($(PYTHON_CHECK),)
+                            PYTHON_INTERPRETER = python
+                            $(warning Python not found in PATH. Install Python 3.11/3.12 or specify full path: make CUSTOM_PYTHON=/path/to/python.exe create_environment)
+                        else
+                            PYTHON_INTERPRETER = python3
+                        endif
+                    else
+                        PYTHON_INTERPRETER = py
+                    endif
                 else
-                    PYTHON_INTERPRETER = python3
+                    PYTHON_INTERPRETER = python
                 endif
             else
-                PYTHON_INTERPRETER = py
+                PYTHON_INTERPRETER = py -3.11
             endif
         else
-            PYTHON_INTERPRETER = python
+            PYTHON_INTERPRETER = py -3.12
         endif
     else
         # Unix/Linux: Try python3, then python, then py
@@ -63,7 +75,7 @@ endif
 create_environment:
 	@echo "Checking Python version..."
 	@$(PYTHON_INTERPRETER) -c "import sys; print('Python {}.{} detected.'.format(sys.version_info.major, sys.version_info.minor))"
-	@$(PYTHON_INTERPRETER) -c "import sys; current_version = '{}.{}'.format(sys.version_info.major, sys.version_info.minor); recommended = '$(PYTHON_VERSION)'; print('Warning: Python {} is recommended for this project.'.format(recommended) if current_version != recommended else '')"
+	@$(PYTHON_INTERPRETER) -c "import sys; v = sys.version_info; sys.exit('ERROR: Python {}.{} is not supported. PRiSM requires Python 3.11 or 3.12 (numpy<2.0 has no wheels for 3.13+). On Windows try: py -3.12 -m venv venv_$(PROJECT_NAME); or specify one: make CUSTOM_PYTHON=/path/to/python3.12 create_environment'.format(v.major, v.minor)) if not ((3, 11) <= (v.major, v.minor) <= (3, 12)) else None"
 	@echo "Creating virtual environment using Python interpreter: $(PYTHON_INTERPRETER)"
 	@$(PYTHON_INTERPRETER) -m venv venv_$(PROJECT_NAME) --clear --copies
 	@echo ">>> New venv created. Activating and installing requirements..."
@@ -87,7 +99,7 @@ endif
 create_environment_dev:
 	@echo "Checking Python version..."
 	@$(PYTHON_INTERPRETER) -c "import sys; print('Python {}.{} detected.'.format(sys.version_info.major, sys.version_info.minor))"
-	@$(PYTHON_INTERPRETER) -c "import sys; current_version = '{}.{}'.format(sys.version_info.major, sys.version_info.minor); recommended = '$(PYTHON_VERSION)'; print('Warning: Python {} is recommended for this project.'.format(recommended) if current_version != recommended else '')"
+	@$(PYTHON_INTERPRETER) -c "import sys; v = sys.version_info; sys.exit('ERROR: Python {}.{} is not supported. PRiSM requires Python 3.11 or 3.12 (numpy<2.0 has no wheels for 3.13+). On Windows try: py -3.12 -m venv venv_$(PROJECT_NAME); or specify one: make CUSTOM_PYTHON=/path/to/python3.12 create_environment'.format(v.major, v.minor)) if not ((3, 11) <= (v.major, v.minor) <= (3, 12)) else None"
 	@echo "Creating virtual environment using Python interpreter: $(PYTHON_INTERPRETER)"
 	@$(PYTHON_INTERPRETER) -m venv venv_$(PROJECT_NAME) --clear --copies
 	@echo ">>> New venv created. Activating and installing requirements with dev dependencies..."
@@ -108,16 +120,17 @@ else
 	@echo ">>> source venv_$(PROJECT_NAME)/bin/activate"
 endif
 
-## (Re)install Python Dependencies
+## (Re)install Python Dependencies (run inside the activated venv; uses the active `python`,
+## not the pinned bootstrap interpreter, so packages land in the venv)
 .PHONY: requirements
 requirements:
-	$(PYTHON_INTERPRETER) -m pip install -U pip
-	$(PYTHON_INTERPRETER) -m pip install -r requirements.txt
+	python -m pip install -U pip
+	python -m pip install -r requirements.txt
 
-## Install GPU acceleration extras (cupy for CUDA 12.x)
+## Install GPU acceleration extras (cupy for CUDA 12.x) -- run inside the activated venv
 .PHONY: requirements-gpu
 requirements-gpu:
-	$(PYTHON_INTERPRETER) -m pip install -e ".[gpu]"
+	python -m pip install -e ".[gpu]"
 	@echo ">>> GPU extras installed. Verify with:"
 	@echo ">>> python -c 'import cupy; print(cupy.cuda.runtime.getDeviceCount(), \"GPU(s) available\")'"
 

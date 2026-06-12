@@ -39,7 +39,9 @@ reference_columns:
 # ============================================================================
 # PRISM ANALYSIS CONFIGURATION
 # ============================================================================
-partial_response_method: 'lebesgue'
+# 'lebesgue' is most accurate and recommended for real analyses, but its cost
+# scales with row count; 'dirac' keeps the 10k-row demo fast on CPU.
+partial_response_method: 'dirac'
 trim_quantile: 0.01
 save_nomogram_json: true
 save_figs: false
@@ -50,7 +52,8 @@ save_figs: false
 hyperparameter_tuning:
   n_jobs: 8
   metric: 'test_auc'
-  enabled: true
+  enabled: false  # off by default: fast, deterministic first run
+  # set enabled: true to tune via Optuna (slower)
   n_trials: 32
   xgb:
     n_trials: 64
@@ -65,10 +68,14 @@ hyperparameter_tuning:
 # Non-inferiority selection: sparsest lambda meeting dynamic AUC threshold
 # threshold = max_auc - ni_level * (max_auc - 0.5)
 # e.g., ni_level=0.1 with max_auc=0.80 -> threshold=0.77
+#
+# ni_level is 0.05 here (tighter than a typical 0.1): on this smaller public
+# synthetic dataset a 0.1 band collapses to a ~2-term nomogram, so we
+# tighten the threshold to retain a more illustrative sparse model (~4 terms).
 lasso_lambda_selection:
   blackbox:
     method: 'non_inferiority'
-    ni_level: 0.1
+    ni_level: 0.05
     beta_threshold: 0.1
   prn:
     method: 'max_test_auc'

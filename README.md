@@ -2,7 +2,7 @@
 
 [![PyPI version](https://img.shields.io/pypi/v/prism-xai.svg)](https://pypi.org/project/prism-xai/)
 [![License: BSD 3-Clause](https://img.shields.io/badge/License-BSD_3--Clause-blue.svg)](LICENSE.md)
-[![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org/downloads/)
+[![Python 3.11-3.12](https://img.shields.io/badge/python-3.11--3.12-blue.svg)](https://www.python.org/downloads/)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.19632958.svg)](https://doi.org/10.5281/zenodo.19632958)
 
 PRiSM is a **model-agnostic framework that converts any probabilistic binary classifier for tabular data into a globally interpretable nomogram** with little compromise in predictive performance. Using functional ANOVA decomposition, it extracts main effects and pairwise interactions from black-box predictions and compiles them into an additive model that *replaces* the original classifier as the deployed predictor.
@@ -38,7 +38,7 @@ df = load_example_dataset('htx_example')
 print(df.shape)
 ```
 
-> **Note:** The CLI commands (`prism run`, `prism tune`, etc.) require a cloned repository with notebooks. pip-only installs provide the `prism` library and bundled example datasets.
+> **Which should I use?** `pip install prism-xai` gives you the PRiSM **library** (`import prism`) and the bundled example dataset -- ideal for applying PRiSM to your own data in code. The **config-driven pipeline** (`prism run`, the notebooks, and the `data/`/`models/` directory layout) lives in the repository and is *not* packaged, so **running the end-to-end example pipeline requires a `git clone`**. (Advanced: pip-only users can point PRiSM at a working directory holding their own configs via the `PRISM_PROJECT_DIR` environment variable.)
 
 ---
 
@@ -51,8 +51,9 @@ The fastest way to explore PRiSM using the included heart transplant example dat
 git clone https://github.com/AIBCTS/PRiSM.git
 cd PRiSM
 
-# 2. Create virtual environment (Python >=3.11 required)
+# 2. Create virtual environment (Python 3.11 or 3.12 required; 3.13+ not yet supported)
 python -m venv venv_prism
+# Windows: if `python` isn't 3.11/3.12, create with the launcher instead: py -3.12 -m venv venv_prism
 # Windows: .\venv_prism\Scripts\activate
 # Linux/Mac: source venv_prism/bin/activate
 
@@ -65,6 +66,16 @@ cp .env.example .env
 # 5. Open in VSCode/JupyterLab and run notebooks in order (select venv_prism as Jupyter kernel):
 #    preprocessing.ipynb -> modelling/train_mlp.ipynb -> prism_analysis.ipynb
 ```
+
+> **Note on the example config (speed vs. accuracy):** the bundled `htx_example` config (10,000 rows)
+> is tuned for a fast first run -- about 5 minutes on CPU. It disables hyperparameter tuning and uses
+> the `dirac` partial-response method by default. `dirac` is a faster approximation that evaluates each
+> partial response at reference values and so ignores correlations between features; it is **less
+> accurate than `lebesgue`**, which integrates over the feature distribution. **The published study
+> uses `lebesgue`**, and it is the recommended method for real analyses. For a full-fidelity run that
+> matches the study, set `hyperparameter_tuning.enabled: true` and `partial_response_method: 'lebesgue'`
+> in `example_notebooks/config/htx_example.yaml` (expect tens of minutes on CPU; a CUDA GPU helps
+> substantially).
 
 > **Important:** If you change `.env`, restart your Jupyter kernel for changes to take effect.
 
@@ -220,7 +231,7 @@ Run notebooks in `example_notebooks/` in this order:
 
 See `example_notebooks/config/example_config.yaml` for all available options.
 
-> **OpenML datasets:** You can also use datasets from [OpenML](https://www.openml.org/) directly by setting `dataset: openml_<id>` in your config (e.g., `openml_31` for credit-g). The dataset will be fetched automatically via the OpenML API.
+> **OpenML datasets:** You can also use datasets from [OpenML](https://www.openml.org/) directly by setting `dataset: openml_<id>` in your config (e.g., `openml_31` for credit-g). The dataset will be fetched automatically via the OpenML API. Requires the `openml` extra: `pip install prism-xai[openml]`.
 
 ### Example Datasets
 
@@ -243,7 +254,7 @@ Both the `prism` CLI and the legacy `python run_*.py` scripts are supported:
 See the [Pipeline Usage Guide](docs/PIPELINE_USAGE.md) for multi-GPU execution, PRiSM-only mode, batch runs, caching, output structure, and other advanced workflows.
 
 ```bash
-prism run htx_example                       # Run full pipeline
+prism run htx_example                       # Run full pipeline (~5 min on CPU with default config)
 prism run htx_example my_config             # Multiple configs
 prism run htx_example --skip-preprocessing  # Use existing preprocessed data
 prism list-configs                          # List available configs
@@ -276,7 +287,11 @@ integer_encoding:
   education: ['Elementary', 'High School', 'Bachelor', 'Master', 'PhD']
 
 # PRiSM analysis
-partial_response_method: 'lebesgue'  # or 'dirac'
+# 'lebesgue': integrates over the feature distribution; most accurate, used in the
+#             published study, recommended for real analyses (cost scales with rows)
+# 'dirac':    evaluates at reference values; faster but less accurate (ignores
+#             feature correlations). Used by the htx_example demo config for speed.
+partial_response_method: 'lebesgue'
 save_nomogram_json: true
 
 # LASSO lambda selection
