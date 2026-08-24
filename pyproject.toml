@@ -1,0 +1,160 @@
+[build-system]
+requires = ["setuptools>=77", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "prism-iml"
+dynamic = ["version"]
+description = "PRiSM (Partial Responses in Structured Models): convert a trained black-box classifier for tabular data into a standalone nomogram that can be audited term by term"
+keywords = ["explainable-ai", "interpretable-ml", "interpretability", "nomogram", "tabular-data", "functional-anova"]
+authors = [
+  { name = "Henry Pigot" },
+  { name = "Paulo J. G. Lisboa" },
+  { name = "Johan Nilsson" },
+]
+maintainers = [
+  { name = "Henry Pigot", email = "henry.pigot@med.lu.se" },
+]
+
+license = "BSD-3-Clause"
+license-files = ["LICENSE.md"]
+readme = "README.md"
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Scientific/Engineering :: Medical Science Apps.",
+    "Intended Audience :: Science/Research",
+]
+requires-python = ">=3.11"
+
+dependencies = [
+    "numpy>=1.26.4,<3",  # keep the 1.26.4 floor: first 1.x that loads numpy-2-written pickles (numpy._core shims)
+    "torch>=2.4.1",  # first wheels built against numpy 2; older CUDA wheels crash on import under numpy 2
+    "pandas>=2.2.2,<3",  # 2.2.2: first with numpy 2 support; pandas 3 str-dtype migration incomplete (object-dtype checks); 3.x + pyarrow also crashes Windows notebook kernels
+    "scikit-learn>=1.5,<2",
+    "xgboost>=3.1,<4",
+    "joblib",
+    "matplotlib>=3.9",  # 3.8.4 first with numpy 2, 3.9 first with boxplot tick_labels kwarg
+    "seaborn>=0.13.2",  # first with numpy 2 support
+    "tableone>=0.9.1",  # numpy 2 support; imported at module level by prism.data_utilities
+    "tqdm",
+    "typer",
+    "python-dotenv",
+    "pyyaml",
+    "optuna>=3.6.1",  # first with numpy 2 fixes
+]
+
+[project.optional-dependencies]
+notebooks = [
+    "nbconvert>=6.0",
+    "nbformat>=5.1",
+    "jupyter",
+    "jupyterlab",
+    "nbautoexport",
+]
+dev = [
+    "prism-iml[notebooks]",
+    "black",
+    "flake8",
+    "isort",
+    "pre-commit",
+    "build",
+    "twine",
+]
+test = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "pytest-mock>=3.10.0",
+    "hypothesis>=6.0.0",
+]
+openml = [
+    "openml",  # fetch openml_<id> datasets; pulls in pyarrow, which is crash-prone on Windows (apache/arrow#40100)
+]
+gpu = [
+    "cupy-cuda12x>=13.3,<15",  # GPU-optimized XGBoost inference (CUDA 12.x); 13.3+ supports numpy 1.x and 2.x
+]
+gpu-cuda13x = [
+    "cupy-cuda13x>=13.3,<15",  # GPU-optimized XGBoost inference (CUDA 13.x, e.g. NGC containers); 13.3+ supports numpy 1.x and 2.x
+]
+
+[project.scripts]
+prism = "prism.cli.main:app"
+
+# URLs for more information
+[project.urls]
+"Homepage" = "https://github.com/AIBCTS/PRiSM"
+"Source" = "https://github.com/AIBCTS/PRiSM"
+"Bug Tracker" = "https://github.com/AIBCTS/PRiSM/issues"
+
+[tool.black]
+line-length = 99
+skip-string-normalization = true
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.git
+  | \.venv
+)/
+'''
+
+[tool.setuptools.packages.find]
+include = ["prism*"]
+exclude = ["notebooks*", "data*", "venv_prism*", "tests*"]
+
+[tool.setuptools.package-data]
+prism = ["data/*.csv"]
+
+[tool.setuptools.dynamic]
+version = {attr = "prism.__version__.__version__"}
+
+[tool.pytest.ini_options]
+# prism is a test path so that --doctest-modules executes the >>> examples in
+# the package docstrings.
+testpaths = ["tests", "prism"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "--strict-markers",
+    "--strict-config",
+    "--doctest-modules",
+    "-ra",
+]
+# Pinned rather than left to pytest's default, which happens to be the same:
+# the traceback examples abbreviate the message with "...".
+doctest_optionflags = ["ELLIPSIS"]
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "ignore::PendingDeprecationWarning",
+]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: marks tests as integration tests",
+    "unit: marks tests as unit tests",
+]
+
+[tool.coverage.run]
+source = ["prism"]
+omit = [
+    "*/tests/*",
+    "*/example_notebooks/*",
+    "*/__version__.py",
+]
+
+[tool.coverage.report]
+precision = 2
+show_missing = true
+skip_covered = false
+exclude_lines = [
+    "pragma: no cover",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+    "@abstractmethod",
+]

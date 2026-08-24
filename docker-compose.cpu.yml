@@ -1,0 +1,36 @@
+# CPU-only override for docker-compose.yml
+# Removes NVIDIA GPU requirements for systems without NVIDIA GPUs
+#
+# Usage:
+#   docker-compose -f docker-compose.yml -f docker-compose.cpu.yml run --rm prism
+#   docker-compose -f docker-compose.yml -f docker-compose.cpu.yml up
+#
+# This file overrides GPU-specific settings from the main docker-compose.yml:
+#   - Removes nvidia runtime
+#   - Clears NVIDIA environment variables
+#   - Replaces nvidia-smi healthcheck with Python import check
+
+version: '3.8'
+
+services:
+  prism:
+    # Override runtime (removes nvidia)
+    runtime: runc
+
+    # Clear GPU-related environment variables
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=
+      - NVIDIA_DRIVER_CAPABILITIES=
+      - CUDA_DEVICE_ORDER=
+      - PYTORCH_CUDA_ALLOC_CONF=
+      - PYTHONUNBUFFERED=1
+
+    # Replace GPU healthcheck with CPU-compatible check
+    healthcheck:
+      test: ["CMD", "python", "-c", "import torch; print('PyTorch OK')"]
+      interval: 5m
+      timeout: 10s
+      retries: 3
+
+    # Note: deploy.resources.reservations cannot be easily cleared in override,
+    # but the main compose file doesn't use device reservations, so this is fine

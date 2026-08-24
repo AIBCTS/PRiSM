@@ -1,0 +1,7 @@
+include LICENSE.md
+include README.md
+recursive-include prism/data *.csv
+# Keep tests out of the sdist: the legacy default would include tests/test*.py
+# only (no conftest, fixtures, or subdirs), shipping an unrunnable partial
+# suite. The GitHub repo is the reference for running the tests.
+prune tests

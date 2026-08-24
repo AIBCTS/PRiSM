@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  prism:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: prism:latest
+    container_name: prism-container
+    runtime: nvidia
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+      - CUDA_DEVICE_ORDER=PCI_BUS_ID
+      - PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:512,garbage_collection_threshold:0.8
+      - PYTHONUNBUFFERED=1
+    # Monitor GPU accessibility (for Docker status/restart policies, not connection keepalive)
+    healthcheck:
+      test: ["CMD", "nvidia-smi"]
+      interval: 5m
+      timeout: 10s
+      retries: 3
+    volumes:
+      # Mount the project directory
+      - .:/workspace
+      # Mount data directory if it exists
+      - ./data:/workspace/data
+      # Mount models directory if it exists
+      - ./models:/workspace/models
+      # Optional: Mount a shared cache directory for pip
+      - ~/.cache/pip:/root/.cache/pip
+    working_dir: /workspace
+    ipc: host
+    pid: host
+    stdin_open: true
+    tty: true
+    # Memory optimizations for multi-GPU systems (e.g., DGX Station A100)
+    ulimits:
+      memlock: -1
+      stack: 67108864
+    # Uncomment the following lines if you want to expose Jupyter
+    # ports:
+    #   - "8888:8888"
+    # command: jupyter lab --ip=0.0.0.0 --port=8888 --no-browser --allow-root --NotebookApp.token=''

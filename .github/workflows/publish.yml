@@ -1,0 +1,149 @@
+name: Publish to PyPI
+
+# Manual dispatch only, one target at a time. Automatic tag-push publishing stays
+# off deliberately: exercise TestPyPI first, inspect, then release. A PyPI version
+# number can never be reused, so a premature upload is unrecoverable.
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "Publish target"
+        required: true
+        type: choice
+        options:
+          - testpypi
+          - pypi
+      confirm:
+        description: "Type PUBLISH to confirm (anything else aborts)"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build and check distributions
+    runs-on: ubuntu-latest
+    steps:
+      # A failing step rather than a job-level `if:`, so a mistyped confirmation
+      # is a red run with a stated reason instead of a silent grey skip.
+      - name: Require an explicit confirmation
+        env:
+          CONFIRM: ${{ inputs.confirm }}
+        run: |
+          if [ "$CONFIRM" != "PUBLISH" ]; then
+            echo "::error::confirmation was not 'PUBLISH' -- nothing built, nothing uploaded"
+            exit 1
+          fi
+
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install build tools
+        run: pip install build twine
+
+      - name: Build sdist and wheel
+        run: python -m build
+
+      - name: Verify metadata
+        run: twine check dist/*
+
+      # Read the version off the artifact that will actually be uploaded rather
+      # than re-deriving it from source.
+      - name: Read the built version
+        id: version
+        run: |
+          version=$(python -c "
+          import pathlib
+          print(next(pathlib.Path('dist').glob('*.whl')).name.split('-')[1])
+          ")
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "built version: $version"
+
+      # The pypi environment restricts deployments to v* tags, which guarantees a
+      # tag exists; this catches the mismatch it cannot see, e.g. tag v0.1.0 on a
+      # tree whose version is 0.1.1.
+      - name: Check the tag matches the version
+        if: inputs.target == 'pypi'
+        env:
+          REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          if [ "$REF_TYPE" != "tag" ]; then
+            echo "::error::a pypi release must be dispatched against a tag, got $REF_TYPE '$REF_NAME'"
+            exit 1
+          fi
+          if [ "$REF_NAME" != "v$VERSION" ]; then
+            echo "::error::tag '$REF_NAME' does not match built version 'v$VERSION'"
+            exit 1
+          fi
+
+      - name: Check the version is not already released
+        env:
+          TARGET: ${{ inputs.target }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          python - <<'PY'
+          import json, os, sys, urllib.error, urllib.request
+
+          host = "pypi.org" if os.environ["TARGET"] == "pypi" else "test.pypi.org"
+          version = os.environ["VERSION"]
+          try:
+              with urllib.request.urlopen(f"https://{host}/pypi/prism-iml/json", timeout=30) as r:
+                  releases = json.load(r).get("releases", {})
+          except urllib.error.HTTPError as exc:
+              if exc.code == 404:
+                  print(f"no prism-iml project on {host} yet; treating as a first upload")
+                  sys.exit(0)
+              raise
+          if version in releases:
+              print(f"::error::{version} is already on {host}; a version can never be replaced")
+              sys.exit(1)
+          print(f"{version} is not yet on {host}")
+          PY
+
+      - name: Store the distributions
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+  publish-testpypi:
+    name: Publish to TestPyPI
+    needs: build
+    if: inputs.target == 'testpypi'
+    runs-on: ubuntu-latest
+    environment: testpypi
+    permissions:
+      id-token: write # OIDC trusted publishing; scoped to this job, not the build
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
+
+  publish-pypi:
+    name: Publish to PyPI
+    needs: build
+    if: inputs.target == 'pypi'
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write # OIDC trusted publishing; scoped to this job, not the build
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+      - uses: pypa/gh-action-pypi-publish@release/v1

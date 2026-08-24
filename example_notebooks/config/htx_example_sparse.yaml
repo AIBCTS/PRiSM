@@ -1,0 +1,68 @@
+# Configuration for the htx_example demo dataset: SPARSE variant.
+#
+# Same as htx_example.yaml but uses noninferiority lambda selection at the
+# blackbox nomogram step: the sparsest lambda whose AUROC remains noninferior
+# to the maximum. Produces a smaller nomogram for comparison.
+#
+#   prism run htx_example_sparse
+
+# =============================================================================
+# REQUIRED FIELDS FOR PIPELINE RUNNERS
+# =============================================================================
+dataset: htx_example
+models: [mlp]
+
+# =============================================================================
+# PREPROCESSING SETTINGS
+# =============================================================================
+random_seed: 257
+
+target_candidates: ['MORTALITY_365D']
+id_candidates: ['TRR_ID_CODE']
+
+# Variable display labels so nomogram plots show human-readable names.
+label_file_candidates: ['htx_example_variable_labels.csv']
+
+splitting_method: 'predefined'
+split_column: 'split'
+drop_split_column: true
+
+force_all_ordinal: false
+convert_numeric: true
+categorical_threshold: 8
+invert_target: false
+
+reference_column_strategy: 'most_common'
+
+# ============================================================================
+# PRiSM ANALYSIS CONFIGURATION
+# ============================================================================
+partial_response_method: 'lebesgue'
+trim_quantile: null
+save_nomogram_json: true
+save_figs: false
+
+# ============================================================================
+# HYPERPARAMETER TUNING CONFIGURATION
+# ============================================================================
+hyperparameter_tuning:
+  enabled: false
+  n_jobs: 8
+  metric: 'test_auc'
+  n_trials: 32
+
+# ============================================================================
+# LASSO lambda selection: SPARSE
+# ============================================================================
+# Noninferiority: sparsest lambda meeting a dynamic AUROC threshold
+#   threshold = max_auc - ni_level * (max_auc - 0.5)
+#   e.g. ni_level=0.1 with max_auc=0.80 -> threshold=0.77
+lasso_lambda_selection:
+  blackbox:
+    method: 'non_inferiority'
+    ni_level: 0.1
+    beta_threshold: 0.1
+  prn:
+    method: 'max_test_auc'
+    target_ratio: 0.998
+    beta_threshold: 0.1

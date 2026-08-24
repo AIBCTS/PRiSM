@@ -1,0 +1,27 @@
+name: Tests (Quick)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install CPU-only PyTorch
+        run: pip install torch --index-url https://download.pytorch.org/whl/cpu
+
+      - name: Install package with test dependencies
+        run: pip install -e ".[test]"
+
+      - name: Run tests and docstring examples
+        # No path argument: testpaths in pyproject.toml covers tests/ and prism/,
+        # and naming tests/ here would silently skip the --doctest-modules pass.
+        run: pytest -v

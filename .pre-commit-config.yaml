@@ -1,0 +1,29 @@
+# The authoritative formatting and lint check: CI runs `pre-commit run --all-files`
+# and `make lint` does the same, so the pinned versions below are the only ones
+# that decide whether the tree is correctly formatted.
+#
+# Install the hook once with `pre-commit install`, or just run `make lint`.
+
+# Notebook scripts under example_notebooks/ are generated from their .ipynb and must
+# never be reformatted: black or isort touching a generated script desyncs it from the
+# notebook it came from. The rule matches nothing where only .ipynb is tracked.
+exclude: '^example_notebooks/.*\.py$'
+
+repos:
+  - repo: https://github.com/psf/black
+    rev: 26.5.1
+    hooks:
+      - id: black
+        args: [--config, pyproject.toml]
+
+  - repo: https://github.com/pycqa/isort
+    rev: 8.0.1
+    hooks:
+      - id: isort
+        args: [--settings-path, setup.cfg]
+
+  - repo: https://github.com/pycqa/flake8
+    rev: 7.3.0
+    hooks:
+      - id: flake8
+        args: [--config, setup.cfg]

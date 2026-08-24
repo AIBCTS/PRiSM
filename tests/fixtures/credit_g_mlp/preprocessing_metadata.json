@@ -1,0 +1,983 @@
+{
+  "numerical_imputation_method": "random",
+  "categorical_imputation_method": "random",
+  "encoding": {
+    "checking_status": {
+      "encoding_type": "one-hot",
+      "created_columns": [
+        "checking_status_0<=X<200",
+        "checking_status_<0",
+        "checking_status_>=200",
+        "checking_status_no checking"
+      ],
+      "mapping": {
+        "0<=X<200": "checking_status_0<=X<200",
+        "<0": "checking_status_<0",
+        "no checking": "checking_status_no checking",
+        ">=200": "checking_status_>=200"
+      },
+      "reverse_mapping": {
+        "checking_status_0<=X<200": "0<=X<200",
+        "checking_status_<0": "<0",
+        "checking_status_no checking": "no checking",
+        "checking_status_>=200": ">=200"
+      },
+      "original_categories": [
+        "0<=X<200",
+        "<0",
+        ">=200",
+        "no checking"
+      ],
+      "original_column": "checking_status"
+    },
+    "credit_history": {
+      "encoding_type": "one-hot",
+      "created_columns": [
+        "credit_history_all paid",
+        "credit_history_critical/other existing credit",
+        "credit_history_delayed previously",
+        "credit_history_existing paid",
+        "credit_history_no credits/all paid"
+      ],
+      "mapping": {
+        "existing paid": "credit_history_existing paid",
+        "critical/other existing credit": "credit_history_critical/other existing credit",
+        "delayed previously": "credit_history_delayed previously",
+        "all paid": "credit_history_all paid",
+        "no credits/all paid": "credit_history_no credits/all paid"
+      },
+      "reverse_mapping": {
+        "credit_history_existing paid": "existing paid",
+        "credit_history_critical/other existing credit": "critical/other existing credit",
+        "credit_history_delayed previously": "delayed previously",
+        "credit_history_all paid": "all paid",
+        "credit_history_no credits/all paid": "no credits/all paid"
+      },
+      "original_categories": [
+        "all paid",
+        "critical/other existing credit",
+        "delayed previously",
+        "existing paid",
+        "no credits/all paid"
+      ],
+      "original_column": "credit_history"
+    },
+    "purpose": {
+      "encoding_type": "one-hot",
+      "created_columns": [
+        "purpose_business",
+        "purpose_domestic appliance",
+        "purpose_education",
+        "purpose_furniture/equipment",
+        "purpose_new car",
+        "purpose_other",
+        "purpose_radio/tv",
+        "purpose_repairs",
+        "purpose_retraining",
+        "purpose_used car"
+      ],
+      "mapping": {
+        "business": "purpose_business",
+        "furniture/equipment": "purpose_furniture/equipment",
+        "repairs": "purpose_repairs",
+        "new car": "purpose_new car",
+        "radio/tv": "purpose_radio/tv",
+        "used car": "purpose_used car",
+        "education": "purpose_education",
+        "domestic appliance": "purpose_domestic appliance",
+        "other": "purpose_other"
+      },
+      "reverse_mapping": {
+        "purpose_business": "business",
+        "purpose_furniture/equipment": "furniture/equipment",
+        "purpose_repairs": "repairs",
+        "purpose_new car": "new car",
+        "purpose_radio/tv": "radio/tv",
+        "purpose_used car": "used car",
+        "purpose_education": "education",
+        "purpose_domestic appliance": "domestic appliance",
+        "purpose_other": "other"
+      },
+      "original_categories": [
+        "business",
+        "domestic appliance",
+        "education",
+        "furniture/equipment",
+        "new car",
+        "other",
+        "radio/tv",
+        "repairs",
+        "used car"
+      ],
+      "original_column": "purpose"
+    },
+    "savings_status": {
+      "encoding_type": "ordinal",
+      "created_columns": [
+        "savings_status"
+      ],
+      "mapping": {
+        "no known savings": 0,
+        "<100": 1,
+        "100<=X<500": 2,
+        "500<=X<1000": 3,
+        ">=1000": 4
+      },
+      "reverse_mapping": {
+        "0": "no known savings",
+        "1": "<100",
+        "2": "100<=X<500",
+        "3": "500<=X<1000",
+        "4": ">=1000"
+      },
+      "original_categories": [
+        "100<=X<500",
+        "500<=X<1000",
+        "<100",
+        ">=1000",
+        "no known savings"
+      ],
+      "original_column": "savings_status"
+    },
+    "employment": {
+      "encoding_type": "ordinal",
+      "created_columns": [
+        "employment"
+      ],
+      "mapping": {
+        "unemployed": 0,
+        "<1": 1,
+        "1<=X<4": 2,
+        "4<=X<7": 3,
+        ">=7": 4
+      },
+      "reverse_mapping": {
+        "0": "unemployed",
+        "1": "<1",
+        "2": "1<=X<4",
+        "3": "4<=X<7",
+        "4": ">=7"
+      },
+      "original_categories": [
+        "1<=X<4",
+        "4<=X<7",
+        "<1",
+        ">=7",
+        "unemployed"
+      ],
+      "original_column": "employment"
+    },
+    "personal_status": {
+      "encoding_type": "one-hot",
+      "created_columns": [
+        "personal_status_female div/dep/mar",
+        "personal_status_male div/sep",
+        "personal_status_male mar/wid",
+        "personal_status_male single"
+      ],
+      "mapping": {
+        "male single": "personal_status_male single",
+        "male div/sep": "personal_status_male div/sep",
+        "female div/dep/mar": "personal_status_female div/dep/mar",
+        "male mar/wid": "personal_status_male mar/wid"
+      },
+      "reverse_mapping": {
+        "personal_status_male single": "male single",
+        "personal_status_male div/sep": "male div/sep",
+        "personal_status_female div/dep/mar": "female div/dep/mar",
+        "personal_status_male mar/wid": "male mar/wid"
+      },
+      "original_categories": [
+        "female div/dep/mar",
+        "male div/sep",
+        "male mar/wid",
+        "male single"
+      ],
+      "original_column": "personal_status"
+    },
+    "other_parties": {
+      "encoding_type": "one-hot",
+      "created_columns": [
+        "other_parties_co applicant",
+        "other_parties_guarantor",
+        "other_parties_none"
+      ],
+      "mapping": {
+        "none": "other_parties_none",
+        "guarantor": "other_parties_guarantor",
+        "co applicant": "other_parties_co applicant"
+      },
+      "reverse_mapping": {
+        "other_parties_none": "none",
+        "other_parties_guarantor": "guarantor",
+        "other_parties_co applicant": "co applicant"
+      },
+      "original_categories": [
+        "co applicant",
+        "guarantor",
+        "none"
+      ],
+      "original_column": "other_parties"
+    },
+    "property_magnitude": {
+      "encoding_type": "one-hot",
+      "created_columns": [
+        "property_magnitude_car",
+        "property_magnitude_life insurance",
+        "property_magnitude_no known property",
+        "property_magnitude_real estate"
+      ],
+      "mapping": {
+        "car": "property_magnitude_car",
+        "life insurance": "property_magnitude_life insurance",
+        "no known property": "property_magnitude_no known property",
+        "real estate": "property_magnitude_real estate"
+      },
+      "reverse_mapping": {
+        "property_magnitude_car": "car",
+        "property_magnitude_life insurance": "life insurance",
+        "property_magnitude_no known property": "no known property",
+        "property_magnitude_real estate": "real estate"
+      },
+      "original_categories": [
+        "car",
+        "life insurance",
+        "no known property",
+        "real estate"
+      ],
+      "original_column": "property_magnitude"
+    },
+    "other_payment_plans": {
+      "encoding_type": "one-hot",
+      "created_columns": [
+        "other_payment_plans_bank",
+        "other_payment_plans_none",
+        "other_payment_plans_stores"
+      ],
+      "mapping": {
+        "none": "other_payment_plans_none",
+        "bank": "other_payment_plans_bank",
+        "stores": "other_payment_plans_stores"
+      },
+      "reverse_mapping": {
+        "other_payment_plans_none": "none",
+        "other_payment_plans_bank": "bank",
+        "other_payment_plans_stores": "stores"
+      },
+      "original_categories": [
+        "bank",
+        "none",
+        "stores"
+      ],
+      "original_column": "other_payment_plans"
+    },
+    "housing": {
+      "encoding_type": "one-hot",
+      "created_columns": [
+        "housing_for free",
+        "housing_own",
+        "housing_rent"
+      ],
+      "mapping": {
+        "own": "housing_own",
+        "for free": "housing_for free",
+        "rent": "housing_rent"
+      },
+      "reverse_mapping": {
+        "housing_own": "own",
+        "housing_for free": "for free",
+        "housing_rent": "rent"
+      },
+      "original_categories": [
+        "for free",
+        "own",
+        "rent"
+      ],
+      "original_column": "housing"
+    },
+    "job": {
+      "encoding_type": "one-hot",
+      "created_columns": [
+        "job_high qualif/self emp/mgmt",
+        "job_skilled",
+        "job_unemp/unskilled non res",
+        "job_unskilled resident"
+      ],
+      "mapping": {
+        "skilled": "job_skilled",
+        "unskilled resident": "job_unskilled resident",
+        "unemp/unskilled non res": "job_unemp/unskilled non res",
+        "high qualif/self emp/mgmt": "job_high qualif/self emp/mgmt"
+      },
+      "reverse_mapping": {
+        "job_skilled": "skilled",
+        "job_unskilled resident": "unskilled resident",
+        "job_unemp/unskilled non res": "unemp/unskilled non res",
+        "job_high qualif/self emp/mgmt": "high qualif/self emp/mgmt"
+      },
+      "original_categories": [
+        "high qualif/self emp/mgmt",
+        "skilled",
+        "unemp/unskilled non res",
+        "unskilled resident"
+      ],
+      "original_column": "job"
+    },
+    "own_telephone": {
+      "encoding_type": "ordinal",
+      "created_columns": [
+        "own_telephone"
+      ],
+      "mapping": {
+        "none": 0,
+        "yes": 1
+      },
+      "reverse_mapping": {
+        "0": "none",
+        "1": "yes"
+      },
+      "original_categories": [
+        "none",
+        "yes"
+      ],
+      "original_column": "own_telephone"
+    },
+    "foreign_worker": {
+      "encoding_type": "ordinal",
+      "created_columns": [
+        "foreign_worker"
+      ],
+      "mapping": {
+        "no": 0,
+        "yes": 1
+      },
+      "reverse_mapping": {
+        "0": "no",
+        "1": "yes"
+      },
+      "original_categories": [
+        "no",
+        "yes"
+      ],
+      "original_column": "foreign_worker"
+    }
+  },
+  "numerical_stats": {
+    "duration": {
+      "mean": 21.55,
+      "median": 18.0,
+      "std": 12.778259646680763,
+      "min": 6.0,
+      "max": 60.0,
+      "missing_count": 0,
+      "missing_pct": 0.0
+    },
+    "credit_amount": {
+      "mean": 3409.96,
+      "median": 2314.0,
+      "std": 2948.7357768727,
+      "min": 362.0,
+      "max": 14782.0,
+      "missing_count": 0,
+      "missing_pct": 0.0
+    },
+    "installment_commitment": {
+      "mean": 3.105,
+      "median": 4.0,
+      "std": 1.0628372949694085,
+      "min": 1.0,
+      "max": 4.0,
+      "missing_count": 0,
+      "missing_pct": 0.0
+    },
+    "residence_since": {
+      "mean": 2.865,
+      "median": 3.0,
+      "std": 1.128335368371296,
+      "min": 1.0,
+      "max": 4.0,
+      "missing_count": 0,
+      "missing_pct": 0.0
+    },
+    "age": {
+      "mean": 36.9,
+      "median": 35.0,
+      "std": 11.948802004666982,
+      "min": 20.0,
+      "max": 74.0,
+      "missing_count": 0,
+      "missing_pct": 0.0
+    },
+    "existing_credits": {
+      "mean": 1.435,
+      "median": 1.0,
+      "std": 0.6541517965001102,
+      "min": 1.0,
+      "max": 4.0,
+      "missing_count": 0,
+      "missing_pct": 0.0
+    },
+    "num_dependents": {
+      "mean": 1.14,
+      "median": 1.0,
+      "std": 0.3478577656537628,
+      "min": 1.0,
+      "max": 2.0,
+      "missing_count": 0,
+      "missing_pct": 0.0
+    },
+    "target": {
+      "mean": 0.7,
+      "median": 1.0,
+      "std": 0.4594075275633928,
+      "min": 0.0,
+      "max": 1.0,
+      "missing_count": 0,
+      "missing_pct": 0.0
+    },
+    "checking_status_<0": {
+      "mean": 0.275,
+      "median": 0.0,
+      "std": 0.4476347667709811,
+      "min": 0.0,
+      "max": 1.0,
+      "missing_count": 0,
+      "missing_pct": 0.0
+    },
+    "checking_status_>=200": {
+      "mean": 0.055,
+      "median": 0.0,
+      "std": 0.22855235921889458,
+      "min": 0.0,
+      "max": 1.0,
+      "missing_count": 0,
+      "missing_pct": 0.0
+    },
+    "checking_status_no checking": {
+      "mean": 0.37,
+      "median": 0.0,
+      "std": 0.48401586418620574,
+      "min": 0.0,
+      "max": 1.0,
+      "missing_count": 0,
+      "missing_pct": 0.0
+    },
+    "credit_history_critical/other existing credit": {
+      "mean": 0.305,
+      "median": 0.0,
+      "std": 0.46156278121727395,
+      "min": 0.0,
+      "max": 1.0,
+      "missing_count": 0,
+      "missing_pct": 0.0
+    },
+    "credit_history_delayed previously": {
+      "mean": 0.08,
+      "median": 0.0,
+      "std": 0.2719739863410307,
+      "min": 0.0,
+      "max": 1.0,
+      "missing_count": 0,
+      "missing_pct": 0.0
+    },
+    "credit_history_existing paid": {
+      "mean": 0.555,
+      "median": 1.0,
+      "std": 0.49821288662780494,
+      "min": 0.0,
+      "max": 1.0,
+      "missing_count": 0,
+      "missing_pct": 0.0
+    },
+    "credit_history_no credits/all paid": {
+      "mean": 0.025,
+      "median": 0.0,
+      "std": 0.1565167321316987,
+      "min": 0.0,
+      "max": 1.0,
+      "missing_count": 0,
+      "missing_pct": 0.0
+    },
+    "purpose_domestic appliance": {
+      "mean": 0.01,
+      "median": 0.0,
+      "std": 0.09974842727441166,
+      "min": 0.0,
+      "max": 1.0,
+      "missing_count": 0,
+      "missing_pct": 0.0
+    },
+    "purpose_education": {
+      "mean": 0.06,
+      "median": 0.0,
+      "std": 0.23808279460185094,
+      "min": 0.0,
+      "max": 1.0,
+      "missing_count": 0,
+      "missing_pct": 0.0
+    },
+    "purpose_furniture/equipment": {
+      "mean": 0.125,
+      "median": 0.0,
+      "std": 0.3315488246330816,
+      "min": 0.0,
+      "max": 1.0,
+      "missing_count": 0,
+      "missing_pct": 0.0
+    },
+    "purpose_new car": {
+      "mean": 0.23,
+      "median": 0.0,
+      "std": 0.4218885513364207,
+      "min": 0.0,
+      "max": 1.0,
+      "missing_count": 0,
+      "missing_pct": 0.0
+    },
+    "purpose_other": {
+      "mean": 0.01,
+      "median": 0.0,
+      "std": 0.09974842727441166,
+      "min": 0.0,
+      "max": 1.0,
+      "missing_count": 0,
+      "missing_pct": 0.0
+    },
+    "purpose_radio/tv": {
+      "mean": 0.365,
+      "median": 0.0,
+      "std": 0.48263826878156096,
+      "min": 0.0,
+      "max": 1.0,
+      "missing_count": 0,
+      "missing_pct": 0.0
+    },
+    "purpose_repairs": {
+      "mean": 0.03,
+      "median": 0.0,
+      "std": 0.17101529509309654,
+      "min": 0.0,
+      "max": 1.0,
+      "missing_count": 0,
+      "missing_pct": 0.0
+    },
+    "purpose_retraining": {
+      "mean": 0.0,
+      "median": 0.0,
+      "std": 0.0,
+      "min": 0.0,
+      "max": 0.0,
+      "missing_count": 0,
+      "missing_pct": 0.0
+    },
+    "purpose_used car": {
+      "mean": 0.105,
+      "median": 0.0,
+      "std": 0.3073226906378774,
+      "min": 0.0,
+      "max": 1.0,
+      "missing_count": 0,
+      "missing_pct": 0.0
+    },
+    "personal_status_male div/sep": {
+      "mean": 0.055,
+      "median": 0.0,
+      "std": 0.22855235921889455,
+      "min": 0.0,
+      "max": 1.0,
+      "missing_count": 0,
+      "missing_pct": 0.0
+    },
+    "personal_status_male mar/wid": {
+      "mean": 0.065,
+      "median": 0.0,
+      "std": 0.247144496216384,
+      "min": 0.0,
+      "max": 1.0,
+      "missing_count": 0,
+      "missing_pct": 0.0
+    },
+    "personal_status_male single": {
+      "mean": 0.55,
+      "median": 1.0,
+      "std": 0.4987421363720584,
+      "min": 0.0,
+      "max": 1.0,
+      "missing_count": 0,
+      "missing_pct": 0.0
+    },
+    "other_parties_guarantor": {
+      "mean": 0.03,
+      "median": 0.0,
+      "std": 0.17101529509309654,
+      "min": 0.0,
+      "max": 1.0,
+      "missing_count": 0,
+      "missing_pct": 0.0
+    },
+    "other_parties_none": {
+      "mean": 0.945,
+      "median": 1.0,
+      "std": 0.22855235921889458,
+      "min": 0.0,
+      "max": 1.0,
+      "missing_count": 0,
+      "missing_pct": 0.0
+    },
+    "property_magnitude_life insurance": {
+      "mean": 0.225,
+      "median": 0.0,
+      "std": 0.4186302142480964,
+      "min": 0.0,
+      "max": 1.0,
+      "missing_count": 0,
+      "missing_pct": 0.0
+    },
+    "property_magnitude_no known property": {
+      "mean": 0.19,
+      "median": 0.0,
+      "std": 0.39328535039354173,
+      "min": 0.0,
+      "max": 1.0,
+      "missing_count": 0,
+      "missing_pct": 0.0
+    },
+    "property_magnitude_real estate": {
+      "mean": 0.245,
+      "median": 0.0,
+      "std": 0.43116646740332826,
+      "min": 0.0,
+      "max": 1.0,
+      "missing_count": 0,
+      "missing_pct": 0.0
+    },
+    "other_payment_plans_none": {
+      "mean": 0.85,
+      "median": 1.0,
+      "std": 0.3579674615346874,
+      "min": 0.0,
+      "max": 1.0,
+      "missing_count": 0,
+      "missing_pct": 0.0
+    },
+    "other_payment_plans_stores": {
+      "mean": 0.035,
+      "median": 0.0,
+      "std": 0.18424093903932007,
+      "min": 0.0,
+      "max": 1.0,
+      "missing_count": 0,
+      "missing_pct": 0.0
+    },
+    "housing_own": {
+      "mean": 0.72,
+      "median": 1.0,
+      "std": 0.4501256106095643,
+      "min": 0.0,
+      "max": 1.0,
+      "missing_count": 0,
+      "missing_pct": 0.0
+    },
+    "housing_rent": {
+      "mean": 0.135,
+      "median": 0.0,
+      "std": 0.34258109849381085,
+      "min": 0.0,
+      "max": 1.0,
+      "missing_count": 0,
+      "missing_pct": 0.0
+    },
+    "job_skilled": {
+      "mean": 0.62,
+      "median": 1.0,
+      "std": 0.48660447963206216,
+      "min": 0.0,
+      "max": 1.0,
+      "missing_count": 0,
+      "missing_pct": 0.0
+    },
+    "job_unemp/unskilled non res": {
+      "mean": 0.03,
+      "median": 0.0,
+      "std": 0.17101529509309654,
+      "min": 0.0,
+      "max": 1.0,
+      "missing_count": 0,
+      "missing_pct": 0.0
+    },
+    "job_unskilled resident": {
+      "mean": 0.165,
+      "median": 0.0,
+      "std": 0.37211199481260626,
+      "min": 0.0,
+      "max": 1.0,
+      "missing_count": 0,
+      "missing_pct": 0.0
+    }
+  },
+  "imputation_values": {
+    "duration": "random sampling from non-missing values",
+    "credit_amount": "random sampling from non-missing values",
+    "installment_commitment": "random sampling from non-missing values",
+    "residence_since": "random sampling from non-missing values",
+    "age": "random sampling from non-missing values",
+    "existing_credits": "random sampling from non-missing values",
+    "num_dependents": "random sampling from non-missing values",
+    "target": "random sampling from non-missing values",
+    "checking_status_<0": "random sampling from non-missing values",
+    "checking_status_>=200": "random sampling from non-missing values",
+    "checking_status_no checking": "random sampling from non-missing values",
+    "credit_history_critical/other existing credit": "random sampling from non-missing values",
+    "credit_history_delayed previously": "random sampling from non-missing values",
+    "credit_history_existing paid": "random sampling from non-missing values",
+    "credit_history_no credits/all paid": "random sampling from non-missing values",
+    "purpose_domestic appliance": "random sampling from non-missing values",
+    "purpose_education": "random sampling from non-missing values",
+    "purpose_furniture/equipment": "random sampling from non-missing values",
+    "purpose_new car": "random sampling from non-missing values",
+    "purpose_other": "random sampling from non-missing values",
+    "purpose_radio/tv": "random sampling from non-missing values",
+    "purpose_repairs": "random sampling from non-missing values",
+    "purpose_retraining": "random sampling from non-missing values",
+    "purpose_used car": "random sampling from non-missing values",
+    "personal_status_male div/sep": "random sampling from non-missing values",
+    "personal_status_male mar/wid": "random sampling from non-missing values",
+    "personal_status_male single": "random sampling from non-missing values",
+    "other_parties_guarantor": "random sampling from non-missing values",
+    "other_parties_none": "random sampling from non-missing values",
+    "property_magnitude_life insurance": "random sampling from non-missing values",
+    "property_magnitude_no known property": "random sampling from non-missing values",
+    "property_magnitude_real estate": "random sampling from non-missing values",
+    "other_payment_plans_none": "random sampling from non-missing values",
+    "other_payment_plans_stores": "random sampling from non-missing values",
+    "housing_own": "random sampling from non-missing values",
+    "housing_rent": "random sampling from non-missing values",
+    "job_skilled": "random sampling from non-missing values",
+    "job_unemp/unskilled non res": "random sampling from non-missing values",
+    "job_unskilled resident": "random sampling from non-missing values"
+  },
+  "column_types": {
+    "checking_status": "categorical",
+    "duration": "numeric",
+    "credit_history": "categorical",
+    "purpose": "categorical",
+    "credit_amount": "numeric",
+    "savings_status": "categorical",
+    "employment": "categorical",
+    "installment_commitment": "numeric",
+    "personal_status": "categorical",
+    "other_parties": "categorical",
+    "residence_since": "numeric",
+    "property_magnitude": "categorical",
+    "age": "numeric",
+    "other_payment_plans": "categorical",
+    "housing": "categorical",
+    "existing_credits": "numeric",
+    "job": "categorical",
+    "num_dependents": "numeric",
+    "own_telephone": "categorical",
+    "foreign_worker": "categorical",
+    "target": "numeric"
+  },
+  "onehot_group_manager": {
+    "_type": "OneHotGroupManager",
+    "groups_dict": {
+      "checking_status": [
+        "checking_status_<0",
+        "checking_status_>=200",
+        "checking_status_no checking"
+      ],
+      "credit_history": [
+        "credit_history_critical/other existing credit",
+        "credit_history_delayed previously",
+        "credit_history_existing paid",
+        "credit_history_no credits/all paid"
+      ],
+      "purpose": [
+        "purpose_domestic appliance",
+        "purpose_education",
+        "purpose_furniture/equipment",
+        "purpose_new car",
+        "purpose_other",
+        "purpose_radio/tv",
+        "purpose_repairs",
+        "purpose_retraining",
+        "purpose_used car"
+      ],
+      "personal_status": [
+        "personal_status_male div/sep",
+        "personal_status_male mar/wid",
+        "personal_status_male single"
+      ],
+      "other_parties": [
+        "other_parties_guarantor",
+        "other_parties_none"
+      ],
+      "property_magnitude": [
+        "property_magnitude_life insurance",
+        "property_magnitude_no known property",
+        "property_magnitude_real estate"
+      ],
+      "other_payment_plans": [
+        "other_payment_plans_none",
+        "other_payment_plans_stores"
+      ],
+      "housing": [
+        "housing_own",
+        "housing_rent"
+      ],
+      "job": [
+        "job_skilled",
+        "job_unemp/unskilled non res",
+        "job_unskilled resident"
+      ]
+    },
+    "reference_columns": {
+      "checking_status": "checking_status_0<=X<200",
+      "credit_history": "credit_history_all paid",
+      "purpose": "purpose_business",
+      "personal_status": "personal_status_female div/dep/mar",
+      "other_parties": "other_parties_co applicant",
+      "property_magnitude": "property_magnitude_car",
+      "other_payment_plans": "other_payment_plans_bank",
+      "housing": "housing_for free",
+      "job": "job_high qualif/self emp/mgmt"
+    },
+    "category_integer_mapping": {
+      "checking_status": {
+        "0": "checking_status_0<=X<200",
+        "1": "checking_status_<0",
+        "2": "checking_status_>=200",
+        "3": "checking_status_no checking"
+      },
+      "credit_history": {
+        "0": "credit_history_all paid",
+        "1": "credit_history_critical/other existing credit",
+        "2": "credit_history_delayed previously",
+        "3": "credit_history_existing paid",
+        "4": "credit_history_no credits/all paid"
+      },
+      "purpose": {
+        "0": "purpose_business",
+        "1": "purpose_domestic appliance",
+        "2": "purpose_education",
+        "3": "purpose_furniture/equipment",
+        "4": "purpose_new car",
+        "5": "purpose_other",
+        "6": "purpose_radio/tv",
+        "7": "purpose_repairs",
+        "8": "purpose_retraining",
+        "9": "purpose_used car"
+      },
+      "personal_status": {
+        "0": "personal_status_female div/dep/mar",
+        "1": "personal_status_male div/sep",
+        "2": "personal_status_male mar/wid",
+        "3": "personal_status_male single"
+      },
+      "other_parties": {
+        "0": "other_parties_co applicant",
+        "1": "other_parties_guarantor",
+        "2": "other_parties_none"
+      },
+      "property_magnitude": {
+        "0": "property_magnitude_car",
+        "1": "property_magnitude_life insurance",
+        "2": "property_magnitude_no known property",
+        "3": "property_magnitude_real estate"
+      },
+      "other_payment_plans": {
+        "0": "other_payment_plans_bank",
+        "1": "other_payment_plans_none",
+        "2": "other_payment_plans_stores"
+      },
+      "housing": {
+        "0": "housing_for free",
+        "1": "housing_own",
+        "2": "housing_rent"
+      },
+      "job": {
+        "0": "job_high qualif/self emp/mgmt",
+        "1": "job_skilled",
+        "2": "job_unemp/unskilled non res",
+        "3": "job_unskilled resident"
+      }
+    }
+  },
+  "reference_columns": {
+    "dropped_columns": [
+      "checking_status_0<=X<200",
+      "credit_history_all paid",
+      "purpose_business",
+      "personal_status_female div/dep/mar",
+      "other_parties_co applicant",
+      "property_magnitude_car",
+      "other_payment_plans_bank",
+      "housing_for free",
+      "job_high qualif/self emp/mgmt"
+    ],
+    "groups": {
+      "checking_status": [
+        "checking_status_<0",
+        "checking_status_>=200",
+        "checking_status_no checking"
+      ],
+      "credit_history": [
+        "credit_history_critical/other existing credit",
+        "credit_history_delayed previously",
+        "credit_history_existing paid",
+        "credit_history_no credits/all paid"
+      ],
+      "purpose": [
+        "purpose_domestic appliance",
+        "purpose_education",
+        "purpose_furniture/equipment",
+        "purpose_new car",
+        "purpose_other",
+        "purpose_radio/tv",
+        "purpose_repairs",
+        "purpose_retraining",
+        "purpose_used car"
+      ],
+      "personal_status": [
+        "personal_status_male div/sep",
+        "personal_status_male mar/wid",
+        "personal_status_male single"
+      ],
+      "other_parties": [
+        "other_parties_guarantor",
+        "other_parties_none"
+      ],
+      "property_magnitude": [
+        "property_magnitude_life insurance",
+        "property_magnitude_no known property",
+        "property_magnitude_real estate"
+      ],
+      "other_payment_plans": [
+        "other_payment_plans_none",
+        "other_payment_plans_stores"
+      ],
+      "housing": [
+        "housing_own",
+        "housing_rent"
+      ],
+      "job": [
+        "job_skilled",
+        "job_unemp/unskilled non res",
+        "job_unskilled resident"
+      ]
+    },
+    "references": {
+      "checking_status": "checking_status_0<=X<200",
+      "credit_history": "credit_history_all paid",
+      "purpose": "purpose_business",
+      "personal_status": "personal_status_female div/dep/mar",
+      "other_parties": "other_parties_co applicant",
+      "property_magnitude": "property_magnitude_car",
+      "other_payment_plans": "other_payment_plans_bank",
+      "housing": "housing_for free",
+      "job": "job_high qualif/self emp/mgmt"
+    },
+    "strategy": "alphabetical"
+  }
+}

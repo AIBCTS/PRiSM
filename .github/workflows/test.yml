@@ -1,0 +1,60 @@
+name: Tests
+
+on:
+  workflow_dispatch:  # disabled automatic triggers; re-enable push/PR triggers when ready
+  # push:
+  #   branches: [main]
+  # pull_request:
+  #   branches: [main]
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 25  # guard: kill a hung job instead of letting it burn runner minutes
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python-version: ["3.11", "3.12", "3.13", "3.14"]
+        numpy-spec: ["numpy>=2,<3"]
+        include:
+          # numpy 1.x legs: keep the older supported range (numpy>=1.26.4,<2) working
+          - os: ubuntu-latest
+            python-version: "3.11"
+            numpy-spec: "numpy>=1.26.4,<2"
+          - os: windows-latest
+            python-version: "3.11"
+            numpy-spec: "numpy>=1.26.4,<2"
+          - os: macos-latest
+            python-version: "3.12"
+            numpy-spec: "numpy>=1.26.4,<2"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install OpenMP runtime for XGBoost (macOS)
+        if: runner.os == 'macOS'
+        run: brew install libomp
+
+      - name: Install CPU-only PyTorch
+        run: pip install torch --index-url https://download.pytorch.org/whl/cpu
+
+      - name: Install package with test dependencies (numpy major resolved together)
+        # Pin the numpy major in the SAME resolution as the package so pip picks a
+        # mutually compatible scipy/etc. Installing then downgrading numpy afterward
+        # strands transitive deps (e.g. scipy built for numpy 2 using np.long) that
+        # break under numpy 1.x -- seen on the macOS py3.12 numpy-1.x leg.
+        run: pip install -e ".[test]" "${{ matrix.numpy-spec }}"
+
+      - name: Report resolved environment
+        run: python -c "import numpy, scipy, torch, prism; print('numpy', numpy.__version__, '| scipy', scipy.__version__, '| torch', torch.__version__, '| mps:', torch.backends.mps.is_available())"
+
+      - name: Run tests and docstring examples
+        # No path argument: testpaths in pyproject.toml covers tests/ and prism/,
+        # and naming tests/ here would silently skip the --doctest-modules pass.
+        run: pytest -v

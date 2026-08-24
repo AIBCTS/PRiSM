@@ -1,0 +1,17 @@
+# Line-ending policy for tracked data files.
+#
+# CSVs are hashed for provenance: data/raw/SHA256SUMS.txt records their digests,
+# and preprocess_data() stores an input digest under data_provenance. Without a
+# policy here, git's autocrlf smudge gives a checkout CRLF on Windows and LF
+# elsewhere, so the same tracked file has different bytes -- and a different
+# SHA-256 -- depending on who cloned it. Recorded digests then verify on one
+# platform only.
+#
+# eol=lf pins the working tree to LF everywhere and normalizes on commit, so an
+# editor that writes CRLF cannot reintroduce the drift. This also makes the CSV
+# bundled in the wheel (prism/data/) byte-identical regardless of build host.
+#
+# Verified safe when this was applied: every newline in every tracked CSV was a
+# row terminator (no CR inside a quoted field), so normalizing changes framing
+# only, not values. Re-check that before adding a CSV with multi-line fields.
+*.csv text eol=lf
