@@ -12,6 +12,11 @@ weight them. The result is an additive model that *replaces* the original classi
 deployed predictor, with a single regularization parameter setting where you sit on the
 sparsity/performance trade-off.
 
+PRiSM is a collaboration between the Artificial Intelligence and Bioinformatics in
+Cardiothoracic Sciences Research Unit at Lund University, Sweden, and the Artificial
+Intelligence and Digital Technologies Research Institute at Liverpool John Moores University,
+UK.
+
 > **Repository:** [https://github.com/AIBCTS/PRiSM](https://github.com/AIBCTS/PRiSM)
 
 ---
@@ -553,10 +558,22 @@ If you use PRiSM in published work, please cite:
 
 The paper is in preparation; its preprint link and DOI will be added here once posted.
 
-## Attribution
+## Authors and attribution
 
-Developed by Henry Pigot, Paulo J. G. Lisboa, and Johan Nilsson, and released under the BSD
-3-Clause License (see [LICENSE.md](https://github.com/AIBCTS/PRiSM/blob/main/LICENSE.md)).
+The PRiSM method is the work of six authors across the two institutions:
+
+Henry Pigot^1, Paulo J. G. Lisboa^2, Sandra Ortega-Martorell^2, Ivan Olier^2, Joseph Mahon^2,
+Johan Nilsson^1,3
+
+1. Department of Translational Medicine, Artificial Intelligence and Bioinformatics in
+   Cardiothoracic Sciences Research Unit, Lund University, Lund, Sweden
+2. Artificial Intelligence and Digital Technologies Research Institute, Liverpool John Moores
+   University, Liverpool, UK
+3. Department of Thoracic and Vascular Surgery, Skåne University Hospital, Lund, Sweden
+
+This repository was written by Henry Pigot, Paulo J. G. Lisboa, and Johan Nilsson, and is
+released under the BSD 3-Clause License (see
+[LICENSE.md](https://github.com/AIBCTS/PRiSM/blob/main/LICENSE.md)).
 
 Parts of the code and documentation were written with AI assistance. The authors reviewed all
 AI-assisted contributions and take responsibility for the content of this repository.
