@@ -552,15 +552,16 @@ The registry data is available from SRTR
 
 If you use PRiSM in published work, please cite:
 
-> Pigot H, Lisboa PJG, Ortega-Martorell S, Olier I, Mahon J, Nilsson J. Translation of
-> black-box clinical prediction models into standalone transparent nomograms: temporal external
-> validation in heart transplantation.
+> Pigot, H., Lisboa, P. J. G., Ortega-Martorell, S., Olier, I., Mahon, J., & Nilsson, J. (2026).
+> Translation of black-box clinical prediction models into standalone transparent nomograms:
+> Temporal external validation in heart transplantation. arXiv.
+> https://arxiv.org/abs/XXXX.XXXXX
 
-The paper is in preparation; its preprint link and DOI will be added here once posted.
+The preprint is not yet posted; the identifier replaces the placeholder above once it is.
 
 ## Authors and attribution
 
-The PRiSM method is the work of six authors across the two institutions:
+The PRiSM framework is the work of six authors:
 
 Henry Pigot^1, Paulo J. G. Lisboa^2, Sandra Ortega-Martorell^2, Ivan Olier^2, Joseph Mahon^2,
 Johan Nilsson^1,3
