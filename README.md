@@ -555,9 +555,7 @@ If you use PRiSM in published work, please cite:
 > Pigot, H., Lisboa, P. J. G., Ortega-Martorell, S., Olier, I., Mahon, J., & Nilsson, J. (2026).
 > Translation of black-box clinical prediction models into standalone transparent nomograms:
 > Temporal external validation in heart transplantation. arXiv.
-> https://arxiv.org/abs/XXXX.XXXXX
-
-The preprint is not yet posted; the identifier replaces the placeholder above once it is.
+> https://doi.org/10.48550/arXiv.2609.07610
 
 ## Authors and attribution
 

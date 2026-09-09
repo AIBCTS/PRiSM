@@ -1,0 +1,56 @@
+cff-version: 1.2.0
+message: "If you use PRiSM in published work, please cite the paper below."
+title: "PRiSM (Partial Responses in Structured Models): a Python framework for converting probabilistic binary classifiers into auditable nomograms"
+abstract: "PRiSM is a model-agnostic framework that converts a trained probabilistic binary classifier for tabular data into a standalone nomogram that can be audited term by term."
+type: software
+authors:
+  - family-names: Pigot
+    given-names: Henry
+    orcid: "https://orcid.org/0000-0003-0770-4206"
+    affiliation: "Department of Translational Medicine, Artificial Intelligence and Bioinformatics in Cardiothoracic Sciences Research Unit, Lund University, Lund, Sweden"
+  - family-names: Lisboa
+    given-names: "Paulo J. G."
+    orcid: "https://orcid.org/0000-0001-6365-4499"
+    affiliation: "Artificial Intelligence and Digital Technologies Research Institute, Liverpool John Moores University, Liverpool, UK"
+  - family-names: Nilsson
+    given-names: Johan
+    orcid: "https://orcid.org/0000-0001-6860-6090"
+    affiliation: "Department of Translational Medicine, Artificial Intelligence and Bioinformatics in Cardiothoracic Sciences Research Unit, Lund University, Lund, Sweden"
+version: 0.1.1
+date-released: 2026-09-09
+license: BSD-3-Clause
+repository-code: "https://github.com/AIBCTS/PRiSM"
+url: "https://github.com/AIBCTS/PRiSM"
+doi: 10.5281/zenodo.19632957
+keywords:
+  - interpretable machine learning
+  - explainable AI
+  - nomogram
+  - functional ANOVA
+  - clinical prediction models
+  - binary classification
+preferred-citation:
+  type: article
+  title: "Translation of black-box clinical prediction models into standalone transparent nomograms: temporal external validation in heart transplantation"
+  authors:
+    - family-names: Pigot
+      given-names: Henry
+      orcid: "https://orcid.org/0000-0003-0770-4206"
+    - family-names: Lisboa
+      given-names: "Paulo J. G."
+      orcid: "https://orcid.org/0000-0001-6365-4499"
+    - family-names: Ortega-Martorell
+      given-names: Sandra
+      orcid: "https://orcid.org/0000-0001-9927-3209"
+    - family-names: Olier
+      given-names: Ivan
+      orcid: "https://orcid.org/0000-0002-5679-7501"
+    - family-names: Mahon
+      given-names: Joseph
+    - family-names: Nilsson
+      given-names: Johan
+      orcid: "https://orcid.org/0000-0001-6860-6090"
+  year: 2026
+  journal: arXiv
+  doi: 10.48550/arXiv.2609.07610
+  url: "https://arxiv.org/abs/2609.07610"
