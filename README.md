@@ -574,6 +574,9 @@ This repository was written by Henry Pigot, Paulo J. G. Lisboa, and Johan Nilsso
 released under the BSD 3-Clause License (see
 [LICENSE.md](https://github.com/AIBCTS/PRiSM/blob/main/LICENSE.md)).
 
+Questions, bug reports, and feature requests are welcome on the
+[issue tracker](https://github.com/AIBCTS/PRiSM/issues).
+
 Parts of the code and documentation were written with AI assistance. The authors reviewed all
 AI-assisted contributions and take responsibility for the content of this repository.
 
